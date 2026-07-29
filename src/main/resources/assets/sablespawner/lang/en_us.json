@@ -1,0 +1,12 @@
+{
+  "sablespawner.configuration.title": "Sable Spawner Config",
+  "sablespawner.configuration.section.sablespawner.common.toml": "Sable Spawner Common Config",
+  "sablespawner.configuration.section.sablespawner.common.toml.title": "Sable Spawner",
+  "sablespawner.configuration.spawn_interval": "Spawn Check Interval (seconds)",
+  "sablespawner.configuration.cleanup_interval": "Cleanup Interval (seconds)",
+  "sablespawner.configuration.enemy_detect_radius": "Enemy Detection Radius",
+  "sablespawner.configuration.spawn_min_distance": "Minimum Spawn Distance",
+  "sablespawner.configuration.spawn_max_distance": "Maximum Spawn Distance",
+  "sablespawner.configuration.blueprint_folder": "Blueprint Folder",
+  "sablespawner.configuration.enemy_name_keyword": "Enemy Name Keyword"
+}
