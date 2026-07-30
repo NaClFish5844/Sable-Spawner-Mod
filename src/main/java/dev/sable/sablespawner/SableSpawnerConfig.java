@@ -31,6 +31,10 @@ public class SableSpawnerConfig {
             .comment("敌人的最大刷新距离（格）\nThe maximum spawn distance of enemy")
             .defineInRange("max_spawn_distance",96,8,1024);
 
+    public static final ModConfigSpec.IntValue ENEMY_DETECTION_DISTANCE = BUILDER
+            .comment("敌人的探测距离（格），距离超过此数值后将判定为脱离敌人\nThe detection distance of enemy, disengages when further than this distance")
+            .defineInRange("enemy_detection_distance",256,8,1024);
+
     public static final ModConfigSpec.IntValue DEBRIS_DESPAWN_TIME = BUILDER
             .comment("敌人碎片的消失时间（秒）\nThe despawn time of enemy's debris")
             .defineInRange("debris_despawn_time",300,10,86400);
