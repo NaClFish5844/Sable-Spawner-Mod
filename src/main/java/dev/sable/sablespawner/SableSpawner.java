@@ -1,10 +1,13 @@
 package dev.sable.sablespawner;
 
+import dev.sable.sablespawner.spawn.GlobalControl;
+import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.level.ServerLevel;
+import net.neoforged.neoforge.event.level.LevelEvent;
 import org.slf4j.Logger;
 
 import com.mojang.logging.LogUtils;
 
-import net.minecraft.core.registries.BuiltInRegistries;
 import net.minecraft.core.registries.Registries;
 import net.minecraft.network.chat.Component;
 import net.minecraft.world.food.FoodProperties;
@@ -13,9 +16,11 @@ import net.minecraft.world.item.CreativeModeTab;
 import net.minecraft.world.item.CreativeModeTabs;
 import net.minecraft.world.item.Item;
 import net.minecraft.world.level.block.Block;
-import net.minecraft.world.level.block.Blocks;
 import net.minecraft.world.level.block.state.BlockBehaviour;
 import net.minecraft.world.level.material.MapColor;
+import dev.sable.sablespawner.datapack.DatapackManager;
+import dev.sable.sablespawner.datapack.DatapackReloadListener;
+import net.neoforged.neoforge.event.AddReloadListenerEvent;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.Mod;
@@ -33,8 +38,10 @@ import net.neoforged.neoforge.registries.DeferredRegister;
 @Mod(SableSpawner.MODID)
 public class SableSpawner {
     public static final String MODID = "sablespawner";
-
     public static final Logger LOGGER = LogUtils.getLogger();
+    public static DatapackManager DATAPACK_MANAGER;
+    public static MinecraftServer SERVER;
+    public static GlobalControl GLOBAL_CONTROLLER;
 
     public static final DeferredRegister.Blocks BLOCKS = DeferredRegister.createBlocks(MODID);
     public static final DeferredRegister.Items ITEMS = DeferredRegister.createItems(MODID);
@@ -94,10 +101,24 @@ public class SableSpawner {
         }
     }
 
-    // You can use SubscribeEvent and let the Event Bus discover methods to call
+
     @SubscribeEvent
     public void onServerStarting(ServerStartingEvent event) {
-        // Do something when the server starts
-        LOGGER.info("HELLO from server starting");
+        SERVER = event.getServer();
+        DATAPACK_MANAGER = DatapackManager.INSTANCE;
+        GLOBAL_CONTROLLER = GlobalControl.INSTANCE;
+        LOGGER.info("SableSpawner server starting");
+    }
+
+    @SubscribeEvent
+    public void onLevelLoad(LevelEvent.Load event){
+        if (event.getLevel() instanceof ServerLevel level){
+            GlobalControl.INSTANCE.onLevelLoad(level);
+        }
+    }
+
+    @SubscribeEvent
+    public void onAddReloadListener(AddReloadListenerEvent event) {
+        event.addListener(new DatapackReloadListener(DATAPACK_MANAGER));
     }
 }

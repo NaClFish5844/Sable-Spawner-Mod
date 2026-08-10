@@ -2,9 +2,7 @@ package dev.sable.sablespawner.datapack.property;
 
 import lombok.Getter;
 import lombok.Setter;
-
 import javax.annotation.Nullable;
-import java.util.ArrayList;
 
 
 @Getter @Setter
@@ -16,7 +14,7 @@ public abstract class AbstractSchematicProperty {
     public enum SublevelType{
         ally,
         enemy,
-        prefabricated,
+        prefab,
         neutral
     }
     public enum SublevelFunction{
@@ -25,7 +23,7 @@ public abstract class AbstractSchematicProperty {
     }
 
     @Nullable public SchematicSource schematicSource = null;
-    @Nullable public String modID = null;
+    @Nullable public String sourceModId = null;
     @Nullable public String schematicPath = null;
     @Nullable public SublevelType sublevelType = SublevelType.neutral;
     @Nullable public SublevelFunction sublevelFunction = null;

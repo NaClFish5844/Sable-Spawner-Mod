@@ -1,5 +1,9 @@
 package dev.sable.sablespawner.datapack.property;
 
+import lombok.Getter;
+import lombok.Setter;
+
+@Getter @Setter
 public class AllyProperty extends AbstractSchematicProperty {
-    // 貌似没什么特别要加的
+    public boolean placeholder = true;
 }
