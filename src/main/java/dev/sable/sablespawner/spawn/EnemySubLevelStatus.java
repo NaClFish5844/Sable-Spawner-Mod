@@ -3,31 +3,34 @@ package dev.sable.sablespawner.spawn;
 import dev.ryanhcode.sable.sublevel.ServerSubLevel;
 import dev.sable.sablespawner.SableSpawner;
 import dev.sable.sablespawner.datapack.property.EnemyProperty;
+import lombok.Getter;
+
+import javax.annotation.Nullable;
+
 import static dev.sable.sablespawner.SableSpawnerConfig.DEBRIS_DESPAWN_TIME;
 
 import java.util.UUID;
 
 
-
 public class EnemySubLevelStatus {
-    public UUID uuid;
-    public ServerSubLevel sublevel;
-    public EnemyProperty property;
-    public double totalMass = -1;
-    public double massPercentage = 100.0;
-    public long spawnedGameTick;
-    public long FTLChargeStartTime;
-    public boolean isDebris;
-    public boolean isInitialized;
+    private final UUID uuid;
+    private final ServerSubLevel sublevel;
+    @Nullable public final EnemyProperty property;
+    private double totalMass = -1;
+    @Getter private double massPercentage = 100.0;
+    private final long spawnedGameTick;
+    @Getter private long FTLChargeStartTime;
+    private final boolean isDebris;
+    @Getter private final boolean initialized;
 
-    public EnemySubLevelStatus(EnemyProperty property, ServerSubLevel subLevel, long gameTick) {
+    public EnemySubLevelStatus(@Nullable EnemyProperty property, ServerSubLevel subLevel, long gameTick) {
         this.uuid = subLevel.getUniqueId();
         this.sublevel = subLevel;
         this.property = property;
         this.spawnedGameTick = gameTick;
         this.isDebris = ( subLevel.getSplitFromSubLevel() != null );
 
-        this.isInitialized = this.init();
+        this.initialized = this.init();
     }
 
     public boolean init() { // init only
@@ -42,10 +45,14 @@ public class EnemySubLevelStatus {
     }
 
     public boolean isDestroyed() { // tick
+        if ( isDebris() ) { return false; }
+
         return this.massPercentage <= this.property.destroyThreshold;
     }
 
     public boolean isFTLCharging() { // tick
+        if ( isDebris() ) { return false; }
+
         if ( this.massPercentage <= this.property.FTLChargeThreshold ){
             this.FTLChargeStartTime = getGameTime();
         }
@@ -53,13 +60,20 @@ public class EnemySubLevelStatus {
     }
 
     public boolean isFTLChargeCompleted() { // tick
+        if ( isDebris() ) { return false; }
+
         return ( getGameTime() - this.FTLChargeStartTime ) >= this.property.FTLChargeDuration;
     }
 
     public boolean isExpired() { // tick, SCAN_IV
+        if ( isDebris() ) { return false; }
+
         double existTime = getGameTime() - this.spawnedGameTick;
-        if ( this.isDebris ) { return existTime >= DEBRIS_DESPAWN_TIME.getAsInt(); }
-        else{ return existTime >= this.property.lifeTime; }
+        return existTime >= DEBRIS_DESPAWN_TIME.getAsInt();
+    }
+
+    private boolean isDebris() {
+        return this.isDebris || this.property == null;
     }
 
     private long getGameTime() {

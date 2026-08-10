@@ -27,14 +27,17 @@ public class GlobalControl {
 
     @SubscribeEvent
     public void onServerTick(ServerTickEvent.Post event){
-        long gt = SableSpawner.SERVER.overworld().getGameTime();
-
-        if ( gt % SCAN_INTERVAL.getAsInt() == 0) {
+        if ( getGameTime() % SCAN_INTERVAL.getAsInt() == 0) {
             for ( EnemyControl controller :CONTROLLERS.values() ){ controller.callScan(); }
         }
+        if ( getGameTime() % 5 == 0) {
+            for ( EnemyControl controller :CONTROLLERS.values() ){ controller.callPer5Tick(); }
+        }
 
-        for ( EnemyControl controller :CONTROLLERS.values() ){ controller.callTick(); }
+        for ( EnemyControl controller :CONTROLLERS.values() ){ controller.callPerTick(); }
 
     }
+
+    private long getGameTime() { return SableSpawner.SERVER.overworld().getGameTime(); }
 
 }

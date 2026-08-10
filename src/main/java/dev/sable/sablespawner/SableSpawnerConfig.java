@@ -15,8 +15,12 @@ public class SableSpawnerConfig {
             .defineInRange("debris_despawn_time",120,10,86400);
 
     public static final ModConfigSpec.IntValue SCAN_INTERVAL = BUILDER
-            .comment("扫描间隔（秒），每次敌人状态扫描（包括敌人的碎片）之间的间隔，请勿设置过低！")
+            .comment("扫描间隔（秒），每次敌人状态扫描（包括敌人的碎片）之间的间隔，请勿设置过低！\nScan interval, the interval between scanning enemies' status, DO NOT set it too low!")
             .defineInRange("scan_interval",5,1,60);
+
+    public static final ModConfigSpec.IntValue PLAYER_PROTECTION_TIME = BUILDER
+            .comment("玩家保护时间（秒），击败敌人后玩家的保护时间")
+            .defineInRange("player_protection_time",60,10,86400);
 
     static final ModConfigSpec SPEC = BUILDER.build();
 }

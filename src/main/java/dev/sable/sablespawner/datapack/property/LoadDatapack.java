@@ -42,10 +42,7 @@ public class LoadDatapack {
         JsonArray levelsArray = root.getAsJsonArray("levels");
 
         for (JsonElement e : levelsArray) {
-            JsonObject entry = e.getAsJsonObject();
-            int level = entry.get("level").getAsInt();
-            int score = entry.get("required_score").getAsInt();
-            config.getWorldLevel().add(new WorldConfig.WorldLevelEntry(level, score));
+            config.getWorldLevel().add(e.getAsInt());
         }
 
         if (root.has("enemy_prefix")) {

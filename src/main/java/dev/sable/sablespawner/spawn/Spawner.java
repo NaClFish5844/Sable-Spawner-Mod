@@ -160,12 +160,12 @@ public class Spawner {
     }
     private String nameBuilder(AbstractSchematicProperty prop) {
         String prefix = null;
-        if ( (prop.getSublevelType() != null) && (DATAPACK_MANAGER.worldConfig != null) ) {
+        if ( (prop.getSublevelType() != null) && (DATAPACK_MANAGER.getWorldConfig() != null) ) {
             prefix = switch (prop.getSublevelType()) {
-                case enemy -> DATAPACK_MANAGER.worldConfig.enemyPrefix;
-                case ally -> DATAPACK_MANAGER.worldConfig.allyPrefix;
-                case prefab -> WorldConfig.neutralPrefix;
-                default -> WorldConfig.neutralPrefix;
+                case enemy -> DATAPACK_MANAGER.getWorldConfig().getEnemyPrefix();
+                case ally -> DATAPACK_MANAGER.getWorldConfig().getAllyPrefix();
+                case prefab -> DATAPACK_MANAGER.getWorldConfig().getNeutralPrefix();
+                default -> DATAPACK_MANAGER.getWorldConfig().getNeutralPrefix();
             };
         }
         return prefix + randomName();

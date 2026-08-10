@@ -6,16 +6,16 @@ import dev.ryanhcode.sable.sublevel.ServerSubLevel;
 import dev.sable.sablespawner.SableSpawner;
 import dev.sable.sablespawner.SableSpawnerConfig;
 import dev.sable.sablespawner.datapack.DatapackManager;
+import dev.sable.sablespawner.datapack.property.EnemyProperty;
+import dev.sable.sablespawner.player.PlayerStatus;
 import dev.sable.sablespawner.util.BoxUtil;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
+import javax.annotation.Nullable;
+import java.util.*;
 
 public class EnemyControl {
     static DatapackManager DATAPACK_MANAGER = SableSpawner.DATAPACK_MANAGER ;
@@ -23,11 +23,7 @@ public class EnemyControl {
     ServerSubLevelContainer CONTAINER;
     Spawner SPAWNER;
 
-    // 可刷新的敌人列表
-    // 由世界 玩家等级 事件（以后再说）生成
-    // 多个不同队伍玩家出现时如何调度？？？ 跟玩家绑定吗？
-    // Map+ArrayList? ArrayList?
-
+    Map<ServerPlayer, PlayerStatus> PlayerLevelTracker = new HashMap<>();
     Map<UUID, EnemySubLevelStatus> ShipTracker = new HashMap<>();
 
     public EnemyControl(ServerLevel level){
@@ -41,14 +37,14 @@ public class EnemyControl {
     }
 
     public boolean isEnemyNearby(ServerPlayer Player) {
-        if (DATAPACK_MANAGER.worldConfig == null) { return false; }
+        if (DATAPACK_MANAGER.getWorldConfig() == null) { return false; }
         if (CONTAINER == null){ return false; }
 
         if ( !(Player.level() instanceof ServerLevel playerLevel)) { return false; }
         if ( playerLevel != LEVEL ) { return false; }
         Vec3 playerWorldPos = Player.position();
 
-        String enemyPrefix = DATAPACK_MANAGER.worldConfig.enemyPrefix;
+        String enemyPrefix = DATAPACK_MANAGER.getWorldConfig().getEnemyPrefix();
         int enemyDetectionDistance = SableSpawnerConfig.ENEMY_DETECTION_DISTANCE.getAsInt();
         AABB detectionBox = AABB.ofSize(playerWorldPos,enemyDetectionDistance,enemyDetectionDistance,enemyDetectionDistance);
         List<ServerSubLevel> sublevelList = CONTAINER.getAllSubLevels();
@@ -75,7 +71,11 @@ public class EnemyControl {
 
     }
 
-    public void callTick() {
+    public void callPerTick() {
+
+    }
+
+    public void callPer5Tick() {
 
     }
 
@@ -95,12 +95,45 @@ public class EnemyControl {
 
     }
 
-    public void dropTrackerEntry(UUID uuid) {
+    public void onPlayerJoinLevel(ServerPlayer player) {
 
     }
 
-    private long getGameTime() {
-        return SableSpawner.SERVER.overworld().getGameTime();
+    public void onPlayerLeaveLevel(ServerPlayer player) {
+
     }
+
+    public void appendTrackerEntry ( @Nullable EnemyProperty property, UUID uuid ) {
+        ServerSubLevel subLevel = (ServerSubLevel) CONTAINER.getSubLevel(uuid);
+
+        if ( subLevel != null ) {
+            EnemySubLevelStatus stat = new EnemySubLevelStatus(property, subLevel, getGameTime());
+            if ( stat.isInitialized() ) { this.ShipTracker.put( subLevel.getUniqueId(), stat ); }
+        }
+    }
+    public void appendTrackerEntry( @Nullable EnemyProperty property, ServerSubLevel subLevel ) {
+        appendTrackerEntry(property, subLevel.getUniqueId());
+    }
+
+    public void removeTrackerEntry( UUID uuid ) {
+        this.ShipTracker.remove(uuid);
+    }
+    public void removeTrackerEntry( ServerSubLevel subLevel ) {
+        removeTrackerEntry( subLevel.getUniqueId() );
+    }
+
+    public boolean isDebrisOfEnemy(ServerSubLevel subLevel) {
+        if ( subLevel.getSplitFromSubLevel() == null ) { return false; }
+        while (true){
+            UUID fatherUUID = subLevel.getSplitFromSubLevel();
+            ServerSubLevel father = (ServerSubLevel) CONTAINER.getSubLevel( fatherUUID );
+            if ( father == null || father.getName() == null || DATAPACK_MANAGER.getWorldConfig() == null ) { return false; }
+            if ( father.getSplitFromSubLevel() == null ) {
+                return father.getName().contains( DATAPACK_MANAGER.getWorldConfig().getEnemyPrefix() );
+            }
+        }
+    }
+
+    private long getGameTime() { return SableSpawner.SERVER.overworld().getGameTime(); }
 
 }
