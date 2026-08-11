@@ -1,7 +1,8 @@
 package dev.sable.sablespawner;
 
+import dev.sable.sablespawner.player.PlayerManager;
+import dev.sable.sablespawner.player.PlayerStatus;
 import dev.sable.sablespawner.spawn.GlobalControl;
-import lombok.Getter;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.neoforged.neoforge.event.level.LevelEvent;
@@ -40,8 +41,10 @@ import net.neoforged.neoforge.registries.DeferredRegister;
 public class SableSpawner {
     public static final String MODID = "sablespawner";
     public static final Logger LOGGER = LogUtils.getLogger();
-    public static DatapackManager DATAPACK_MANAGER;
     public static MinecraftServer SERVER;
+
+    public static DatapackManager DATAPACK_MANAGER;
+    public static PlayerManager PLAYER_MANAGER;
     public static GlobalControl GLOBAL_CONTROLLER;
 
     public static final DeferredRegister.Blocks BLOCKS = DeferredRegister.createBlocks(MODID);
@@ -102,21 +105,19 @@ public class SableSpawner {
         }
     }
 
-
     @SubscribeEvent
     public void onServerStarting(ServerStartingEvent event) {
         SERVER = event.getServer();
         DATAPACK_MANAGER = DatapackManager.INSTANCE;
+        PLAYER_MANAGER = PlayerManager.INSTANCE;
         GLOBAL_CONTROLLER = GlobalControl.INSTANCE;
+
+        NeoForge.EVENT_BUS.register(PLAYER_MANAGER);
+        NeoForge.EVENT_BUS.register(GLOBAL_CONTROLLER);
+
         LOGGER.info("SableSpawner server starting");
     }
 
-    @SubscribeEvent
-    public void onLevelLoad(LevelEvent.Load event){
-        if (event.getLevel() instanceof ServerLevel level){
-            GlobalControl.INSTANCE.onLevelLoad(level);
-        }
-    }
 
     @SubscribeEvent
     public void onAddReloadListener(AddReloadListenerEvent event) {

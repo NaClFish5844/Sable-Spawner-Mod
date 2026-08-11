@@ -7,7 +7,7 @@ import dev.sable.sablespawner.SableSpawner;
 import dev.sable.sablespawner.SableSpawnerConfig;
 import dev.sable.sablespawner.datapack.DatapackManager;
 import dev.sable.sablespawner.datapack.WorldConfig;
-import dev.sable.sablespawner.player.PlayerStatus;
+import dev.sable.sablespawner.player.PlayerManager;
 import dev.sable.sablespawner.util.BoxUtil;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
@@ -21,7 +21,6 @@ public class EnemyControl {
     ServerSubLevelContainer CONTAINER;
     Spawner SPAWNER;
 
-    Map<ServerPlayer, PlayerStatus> PlayerTracker = new HashMap<>();
     Map<UUID, EnemySubLevelStatus> ShipTracker = new HashMap<>();
 
     public EnemyControl(ServerLevel level){
@@ -113,31 +112,22 @@ public class EnemyControl {
 
     }
 
-    // 5t
-    public void onPlayerJoinLevel(ServerPlayer player) {
 
-    }
-
-    // 5t
-    public void onPlayerLeaveLevel(ServerPlayer player) {
-
-    }
-
-
-    public void appendTrackerEntry(EnemySubLevelStatus status) {
+    public void appendShipTrackerEntry(EnemySubLevelStatus status) {
         this.ShipTracker.put( status.getUuid(), status );
     }
 
-    public void removeTrackerEntry( UUID uuid ) {
+    public void removeShipTrackerEntry( UUID uuid ) {
         this.ShipTracker.remove(uuid);
     }
-    public void removeTrackerEntry( ServerSubLevel subLevel ) {
-        removeTrackerEntry( subLevel.getUniqueId() );
+    public void removeShipTrackerEntry( ServerSubLevel subLevel ) {
+        removeShipTrackerEntry( subLevel.getUniqueId() );
     }
 
 
     private long getGameTime() { return SableSpawner.SERVER.overworld().getGameTime(); }
     private DatapackManager getDatapackManager() { return SableSpawner.DATAPACK_MANAGER; }
     private WorldConfig getWorldConfig() { return SableSpawner.DATAPACK_MANAGER.getWorldConfig(); }
+    private PlayerManager getPlayerManager() { return SableSpawner.PLAYER_MANAGER; }
 
 }

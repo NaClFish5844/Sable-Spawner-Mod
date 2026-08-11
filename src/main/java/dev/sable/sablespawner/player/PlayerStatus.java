@@ -1,18 +1,16 @@
 package dev.sable.sablespawner.player;
 
 import dev.sable.sablespawner.SableSpawner;
-import dev.sable.sablespawner.datapack.WorldConfig;
 import lombok.Getter;
-import lombok.Setter;
 import net.minecraft.server.level.ServerPlayer;
+import net.minecraft.world.level.Level;
 
 import static dev.sable.sablespawner.SableSpawnerConfig.PLAYER_PROTECTION_TIME;
 
-public class PlayerStatus {
+public class PlayerStatus extends ScoreStatus {
     @Getter private final ServerPlayer player;
     private boolean inProtection = false;
-    private long inProtectionTime;
-    @Getter @Setter private int playerScore = 0;
+    private long inProtectionTime = -1;
 
     public PlayerStatus(ServerPlayer player) {
         this.player = player;
@@ -32,28 +30,11 @@ public class PlayerStatus {
         return this.inProtection;
     }
 
-    public void addPlayerScore(int score) {
-        if ( score<=0 ) { return; }
-        this.playerScore += score;
-    }
-    public void subPlayerScore(int score) {
-        if ( score<=0 ) { return; }
-        this.playerScore -= score;
-        if ( this.playerScore < 0 ) { this.playerScore = 0; }
+    public Level getLevel() {
+        return player.level();
     }
 
-    public int getPlayerLevel() {
-        int result = 1;
-        if (getWorldConfig() == null || getWorldConfig().getWorldLevel() == null) { return result; }
-        for (int i = 0; i < getWorldConfig().getWorldLevel().size(); i++) {
-            if (this.playerScore >= getWorldConfig().getWorldLevel().get(i)) {
-                result = i + 1;
-            }
-        }
-        return result;
-    }
 
-    private WorldConfig getWorldConfig() { return SableSpawner.DATAPACK_MANAGER.getWorldConfig(); }
     private long getGameTime() { return SableSpawner.SERVER.overworld().getGameTime(); }
 
 }

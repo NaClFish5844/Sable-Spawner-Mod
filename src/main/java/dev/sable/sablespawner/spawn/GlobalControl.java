@@ -1,8 +1,10 @@
 package dev.sable.sablespawner.spawn;
 
 import dev.sable.sablespawner.SableSpawner;
+import dev.sable.sablespawner.player.PlayerManager;
 import net.minecraft.server.level.ServerLevel;
 import net.neoforged.bus.api.SubscribeEvent;
+import net.neoforged.neoforge.event.level.LevelEvent;
 import net.neoforged.neoforge.event.tick.ServerTickEvent;
 
 import java.util.ArrayList;
@@ -18,12 +20,17 @@ public class GlobalControl {
     public ArrayList<String> LEVELS = new ArrayList<>(List.of("deepspace:space"));
     public Map<String, EnemyControl> CONTROLLERS = new HashMap<>();
 
-    public void onLevelLoad(ServerLevel level){
-        String dim = level.dimension().location().toString();
-        if (LEVELS.contains(dim) && !CONTROLLERS.containsKey(dim) ){
-            CONTROLLERS.put(dim, new EnemyControl(level));
+
+    @SubscribeEvent
+    public void onLevelLoad(LevelEvent.Load event){
+        if (event.getLevel() instanceof ServerLevel level){
+            String dim = level.dimension().location().toString();
+            if (LEVELS.contains(dim) && !CONTROLLERS.containsKey(dim) ){
+                CONTROLLERS.put(dim, new EnemyControl(level));
+            }
         }
     }
+
 
     @SubscribeEvent
     public void onServerTick(ServerTickEvent.Post event){
@@ -35,9 +42,9 @@ public class GlobalControl {
         }
 
         for ( EnemyControl controller :CONTROLLERS.values() ){ controller.callPerTick(); }
-
     }
 
     private long getGameTime() { return SableSpawner.SERVER.overworld().getGameTime(); }
+    private PlayerManager getPlayerManager() { return SableSpawner.PLAYER_MANAGER; }
 
 }
