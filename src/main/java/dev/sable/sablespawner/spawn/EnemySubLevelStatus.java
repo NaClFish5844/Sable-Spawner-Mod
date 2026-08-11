@@ -13,13 +13,13 @@ import java.util.UUID;
 
 
 public class EnemySubLevelStatus {
-    private final UUID uuid;
+    @Getter private final UUID uuid;
     private final ServerSubLevel sublevel;
     @Nullable public final EnemyProperty property;
     private double totalMass = -1;
     @Getter private double massPercentage = 100.0;
     private final long spawnedGameTick;
-    @Getter private long FTLChargeStartTime;
+    @Getter private long FTLChargeStartTime = -1;
     private final boolean isDebris;
     @Getter private final boolean initialized;
 
@@ -40,8 +40,11 @@ public class EnemySubLevelStatus {
         return ( this.totalMass != -1);
     }
 
-    public void updateMassPercentage() { // 谨慎使用 最差200us
-        this.massPercentage =  this.sublevel.getSelfMassTracker().getMass() / this.totalMass;
+    public void updateMassPercentage() { // 5t
+        if ( !this.initialized ) { return; }
+        if ( isDebris() ) { return; }
+
+        this.massPercentage =  this.sublevel.getSelfMassTracker().getMass() / this.totalMass * 100.0 ;
     }
 
     public boolean isDestroyed() { // tick
@@ -50,32 +53,36 @@ public class EnemySubLevelStatus {
         return this.massPercentage <= this.property.destroyThreshold;
     }
 
-    public boolean isFTLCharging() { // tick
+    public boolean isFTLCharging() { // 5t
         if ( isDebris() ) { return false; }
+        if ( isDestroyed() ) { return false; }
 
-        if ( this.massPercentage <= this.property.FTLChargeThreshold ){
+        if ( this.massPercentage <= this.property.FTLChargeThreshold && this.FTLChargeStartTime == -1 ){
             this.FTLChargeStartTime = getGameTime();
         }
         return this.massPercentage <= this.property.FTLChargeThreshold;
     }
 
-    public boolean isFTLChargeCompleted() { // tick
+    public boolean isFTLChargeCompleted() { // 5t
         if ( isDebris() ) { return false; }
+        if ( this.FTLChargeStartTime == -1 ) { return false; }
 
         return ( getGameTime() - this.FTLChargeStartTime ) >= this.property.FTLChargeDuration;
     }
 
-    public boolean isExpired() { // tick, SCAN_IV
-        if ( isDebris() ) { return false; }
-
+    public boolean isExpired() { // tick, scan
         double existTime = getGameTime() - this.spawnedGameTick;
-        return existTime >= DEBRIS_DESPAWN_TIME.getAsInt();
+
+        if ( isDebris() ) {
+            return existTime >= DEBRIS_DESPAWN_TIME.getAsInt();
+        }else{
+            return existTime >= this.property.getLifeTime();
+        }
     }
 
     private boolean isDebris() {
         return this.isDebris || this.property == null;
     }
-
     private long getGameTime() {
         return SableSpawner.SERVER.overworld().getGameTime();
     }

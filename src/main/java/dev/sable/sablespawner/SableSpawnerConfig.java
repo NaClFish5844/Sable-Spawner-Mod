@@ -7,20 +7,20 @@ public class SableSpawnerConfig {
     private static final ModConfigSpec.Builder BUILDER = new ModConfigSpec.Builder();
 
     public static final ModConfigSpec.IntValue ENEMY_DETECTION_DISTANCE = BUILDER
-            .comment("敌人的探测距离（格），距离超过此数值后将判定为脱离敌人\nThe detection distance of enemy, disengages when further than this distance")
+            .comment("敌人的探测距离（格），距离超过此数值后将判定为脱离敌人")
             .defineInRange("enemy_detection_distance",256,8,1024);
 
     public static final ModConfigSpec.IntValue DEBRIS_DESPAWN_TIME = BUILDER
-            .comment("敌人碎片的消失时间（秒）\nThe despawn time of enemy's debris")
-            .defineInRange("debris_despawn_time",120,10,86400);
+            .comment("敌人碎片的消失时间（tick）")
+            .defineInRange("debris_despawn_time",2400,20,72000);
 
     public static final ModConfigSpec.IntValue SCAN_INTERVAL = BUILDER
-            .comment("扫描间隔（秒），每次敌人状态扫描（包括敌人的碎片）之间的间隔，请勿设置过低！\nScan interval, the interval between scanning enemies' status, DO NOT set it too low!")
-            .defineInRange("scan_interval",5,1,60);
+            .comment("扫描间隔（tick），每次敌人状态扫描（包括敌人的碎片）之间的间隔，请勿设置过低！")
+            .defineInRange("scan_interval",100,10,172800);
 
     public static final ModConfigSpec.IntValue PLAYER_PROTECTION_TIME = BUILDER
-            .comment("玩家保护时间（秒），击败敌人后玩家的保护时间")
-            .defineInRange("player_protection_time",60,10,86400);
+            .comment("玩家保护时间（tick），击败敌人后玩家的保护时间")
+            .defineInRange("player_protection_time",1200,10,172800);
 
     static final ModConfigSpec SPEC = BUILDER.build();
 }

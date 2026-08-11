@@ -28,7 +28,7 @@ public class PlayerStatus {
     }
     public boolean isInProtection() {
         if ( this.inProtectionTime == -1 ) { return false; }
-        this.inProtection = (getGameTime() - inProtectionTime) <= (PLAYER_PROTECTION_TIME.getAsInt() * 20L);
+        this.inProtection = ( getGameTime() - inProtectionTime) <= (PLAYER_PROTECTION_TIME.getAsInt() );
         return this.inProtection;
     }
 
