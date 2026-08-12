@@ -42,6 +42,7 @@ public class EnemySubLevelStatus {
 
     public void updateMassPercentage() { // 5t
         if ( !this.initialized ) { return; }
+        if ( this.totalMass <=0 ) { return; }
         if ( isDebris() ) { return; }
 
         this.massPercentage =  this.sublevel.getSelfMassTracker().getMass() / this.totalMass * 100.0 ;

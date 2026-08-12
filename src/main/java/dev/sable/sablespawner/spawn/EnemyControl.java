@@ -9,6 +9,7 @@ import dev.sable.sablespawner.datapack.DatapackManager;
 import dev.sable.sablespawner.datapack.WorldConfig;
 import dev.sable.sablespawner.player.PlayerManager;
 import dev.sable.sablespawner.util.BoxUtil;
+import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.phys.AABB;
@@ -21,7 +22,7 @@ public class EnemyControl {
     ServerSubLevelContainer CONTAINER;
     Spawner SPAWNER;
 
-    Map<UUID, EnemySubLevelStatus> ShipTracker = new HashMap<>();
+    Object2ObjectOpenHashMap<UUID, EnemySubLevelStatus> ShipTracker = new Object2ObjectOpenHashMap<>();
 
     public EnemyControl(ServerLevel level){
         this.LEVEL = level;
@@ -61,7 +62,6 @@ public class EnemyControl {
 
     // tick
     public boolean isEnemyNearby(ServerPlayer Player) {
-        if ( getWorldConfig() == null ) { return false; }
         if ( CONTAINER == null ){ return false; }
 
         if ( !(Player.level() instanceof ServerLevel playerLevel)) { return false; }
@@ -95,7 +95,7 @@ public class EnemyControl {
         while (true){
             UUID fatherUUID = subLevel.getSplitFromSubLevel();
             ServerSubLevel father = (ServerSubLevel) CONTAINER.getSubLevel( fatherUUID );
-            if ( father == null || father.getName() == null || getWorldConfig() == null ) { return false; }
+            if ( father == null || father.getName() == null ) { return false; }
             if ( father.getSplitFromSubLevel() == null ) {
                 return father.getName().contains( getWorldConfig().getEnemyPrefix() );
             }

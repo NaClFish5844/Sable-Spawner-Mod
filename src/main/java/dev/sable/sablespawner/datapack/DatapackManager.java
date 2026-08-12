@@ -4,14 +4,12 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import dev.sable.sablespawner.datapack.property.AbstractSchematicProperty;
-import dev.sable.sablespawner.datapack.property.LoadDatapack;
 import lombok.Getter;
 import lombok.Setter;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.resources.Resource;
 import net.minecraft.server.packs.resources.ResourceManager;
 
-import javax.annotation.Nullable;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -22,8 +20,8 @@ import java.util.Optional;
 public class DatapackManager {
     public static final DatapackManager INSTANCE = new DatapackManager();
 
-    @Nullable private ArrayList<AbstractSchematicProperty> allProperties = new ArrayList<>();
-    @Nullable private WorldConfig worldConfig = new WorldConfig();
+    private ArrayList<AbstractSchematicProperty> allProperties = new ArrayList<>();
+    private WorldConfig worldConfig = new WorldConfig();
 
     public void loadDatapack(
         Map<ResourceLocation, JsonElement> files,

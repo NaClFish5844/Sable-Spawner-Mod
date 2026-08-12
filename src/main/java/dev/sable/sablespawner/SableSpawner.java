@@ -1,11 +1,9 @@
 package dev.sable.sablespawner;
 
 import dev.sable.sablespawner.player.PlayerManager;
-import dev.sable.sablespawner.player.PlayerStatus;
 import dev.sable.sablespawner.spawn.GlobalControl;
 import net.minecraft.server.MinecraftServer;
-import net.minecraft.server.level.ServerLevel;
-import net.neoforged.neoforge.event.level.LevelEvent;
+import net.minecraft.server.packs.resources.ResourceManager;
 import org.slf4j.Logger;
 
 import com.mojang.logging.LogUtils;
@@ -43,6 +41,7 @@ public class SableSpawner {
     public static final Logger LOGGER = LogUtils.getLogger();
     public static MinecraftServer SERVER;
 
+    public static ResourceManager RESOURCE_MANAGER;
     public static DatapackManager DATAPACK_MANAGER;
     public static PlayerManager PLAYER_MANAGER;
     public static GlobalControl GLOBAL_CONTROLLER;
@@ -108,6 +107,7 @@ public class SableSpawner {
     @SubscribeEvent
     public void onServerStarting(ServerStartingEvent event) {
         SERVER = event.getServer();
+        RESOURCE_MANAGER = SERVER.getResourceManager();
         DATAPACK_MANAGER = DatapackManager.INSTANCE;
         PLAYER_MANAGER = PlayerManager.INSTANCE;
         GLOBAL_CONTROLLER = GlobalControl.INSTANCE;

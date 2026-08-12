@@ -2,6 +2,8 @@ package dev.sable.sablespawner.datapack.property;
 
 import lombok.Getter;
 import lombok.Setter;
+import net.minecraft.resources.ResourceLocation;
+
 import javax.annotation.Nullable;
 
 
@@ -25,6 +27,7 @@ public abstract class AbstractSchematicProperty {
     @Nullable public SchematicSource schematicSource = null;
     @Nullable public String sourceModId = null;
     @Nullable public String schematicPath = null;
+    @Nullable public ResourceLocation schematicResourceLocation = null;
     @Nullable public SublevelType sublevelType = SublevelType.neutral;
     @Nullable public SublevelFunction sublevelFunction = null;
 

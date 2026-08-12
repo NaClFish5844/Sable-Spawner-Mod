@@ -18,15 +18,20 @@ import net.minecraft.core.BlockPos;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.NbtAccounter;
 import net.minecraft.nbt.NbtIo;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.packs.resources.Resource;
+import net.minecraft.server.packs.resources.ResourceManager;
 import net.minecraft.world.phys.Vec3;
 import org.jetbrains.annotations.Nullable;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.file.Path;
 import java.util.*;
 
 public class Spawner {
+    // 以后想办法重构成链式的？
     DatapackManager DATAPACK_MANAGER = SableSpawner.DATAPACK_MANAGER;
     private final ServerSubLevelContainer CONTAINER;
     private final Random RANDOM = new Random();
@@ -135,15 +140,36 @@ public class Spawner {
         return null;
     }
 
-    public @Nullable SableBlueprint getSableBlueprint(AbstractSchematicProperty sublevel){
-        String path = sublevel.getSchematicPath();
+    public @Nullable SableBlueprint getSableBlueprint(AbstractSchematicProperty property){
+        if (property == null) { return null; }
+
         try {
-            if (path != null) {
-                CompoundTag tag = NbtIo.readCompressed(Path.of(path), NbtAccounter.unlimitedHeap());
-                return SableBlueprint.load(tag);
+            switch (property.getSchematicSource() == null
+                    ? AbstractSchematicProperty.SchematicSource.datapack
+                    : property.getSchematicSource())
+            {
+                case folder -> {
+                    String path = property.getSchematicPath();
+                    if (path == null) { return null; }
+                    CompoundTag tag = NbtIo.readCompressed(Path.of(path), NbtAccounter.unlimitedHeap());
+                    return SableBlueprint.load(tag);
+                }
+                case datapack -> {
+                    ResourceLocation loc = property.getSchematicResourceLocation();
+                    if (loc == null) { return null; }
+                    Optional<Resource> resource = getResourceManager().getResource(loc);
+                    if (resource.isEmpty()) {
+                        SableSpawner.LOGGER.error("Failed to find blueprint in datapack: {}", loc);
+                        return null;
+                    }
+                    try (InputStream is = resource.get().open()) {
+                        CompoundTag tag = NbtIo.readCompressed(is, NbtAccounter.unlimitedHeap());
+                        return SableBlueprint.load(tag);
+                    }
+                }
             }
         } catch (IOException e) {
-            SableSpawner.LOGGER.error("Failed to load blueprint: {}", path, e);
+            SableSpawner.LOGGER.error("Failed to load blueprint: {}", property.getSchematicPath(), e);
         }
         return null;
     }
@@ -160,7 +186,7 @@ public class Spawner {
     }
     private String nameBuilder(AbstractSchematicProperty prop) {
         String prefix = null;
-        if ( (prop.getSublevelType() != null) && (DATAPACK_MANAGER.getWorldConfig() != null) ) {
+        if ( prop.getSublevelType() != null ) {
             prefix = switch (prop.getSublevelType()) {
                 case enemy -> DATAPACK_MANAGER.getWorldConfig().getEnemyPrefix();
                 case ally -> DATAPACK_MANAGER.getWorldConfig().getAllyPrefix();
@@ -170,5 +196,6 @@ public class Spawner {
         }
         return prefix + randomName();
     }
+    private ResourceManager getResourceManager() { return SableSpawner.RESOURCE_MANAGER; }
 
 }
