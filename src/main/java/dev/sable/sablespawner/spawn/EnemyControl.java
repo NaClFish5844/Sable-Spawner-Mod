@@ -22,7 +22,10 @@ public class EnemyControl {
     ServerSubLevelContainer CONTAINER;
     Spawner SPAWNER;
 
+    // 这俩玩意疑似需要独立出去了
+    // 跟SPAWNER坐一桌去
     Object2ObjectOpenHashMap<UUID, EnemySubLevelStatus> ShipTracker = new Object2ObjectOpenHashMap<>();
+    Object2ObjectOpenHashMap<UUID, SpawnTicket> NextSpawn = new Object2ObjectOpenHashMap<>();
 
     public EnemyControl(ServerLevel level){
         this.LEVEL = level;
@@ -112,6 +115,9 @@ public class EnemyControl {
 
     }
 
+    public SpawnTicket ticketGenerator() {
+        return null;
+    }
 
     public void appendShipTrackerEntry(EnemySubLevelStatus status) {
         this.ShipTracker.put( status.getUuid(), status );

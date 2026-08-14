@@ -8,7 +8,6 @@ import dev.ryanhcode.sable.api.sublevel.SubLevelContainer;
 import dev.ryanhcode.sable.sublevel.ServerSubLevel;
 import dev.sable.sablespawner.SableSpawner;
 import dev.sable.sablespawner.datapack.DatapackManager;
-import dev.sable.sablespawner.datapack.WorldConfig;
 import dev.sable.sablespawner.datapack.property.AbstractSchematicProperty;
 import dev.sable.sablespawner.datapack.property.EnemyProperty;
 import dev.sable.sablespawner.datapack.property.AllyProperty;
@@ -140,7 +139,7 @@ public class Spawner {
         return null;
     }
 
-    public @Nullable SableBlueprint getSableBlueprint(AbstractSchematicProperty property){
+    public static @Nullable SableBlueprint getSableBlueprint(AbstractSchematicProperty property){
         if (property == null) { return null; }
 
         try {
@@ -196,6 +195,6 @@ public class Spawner {
         }
         return prefix + randomName();
     }
-    private ResourceManager getResourceManager() { return SableSpawner.RESOURCE_MANAGER; }
+    private static ResourceManager getResourceManager() { return SableSpawner.RESOURCE_MANAGER; }
 
 }

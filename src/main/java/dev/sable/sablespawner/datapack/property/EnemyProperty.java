@@ -21,7 +21,7 @@ public class EnemyProperty extends AbstractSchematicProperty {
     public int minSpawnInterval = -1;
     public int maxSpawnInterval = -1;
 
-    public int spawnAmount = -1;
+    public int maxSpawnAmount = 1;
 
     public int destroyThreshold = -1;
 
@@ -32,5 +32,5 @@ public class EnemyProperty extends AbstractSchematicProperty {
     @SerializedName("ftl_charge_duration")
     public int FTLChargeDuration = -1;
 
-    public int value = -1;
+    public int value = 0;
 }
