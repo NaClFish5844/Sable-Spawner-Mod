@@ -24,11 +24,11 @@ public abstract class AbstractSchematicProperty {
         cargo
     }
 
-    @Nullable public SchematicSource schematicSource = null;
-    @Nullable public String sourceModId = null;
-    @Nullable public String schematicPath = null;
-    @Nullable public ResourceLocation schematicResourceLocation = null;
-    @Nullable public SublevelType sublevelType = SublevelType.neutral;
-    @Nullable public SublevelFunction sublevelFunction = null;
+    @Nullable private SchematicSource schematicSource = null;
+    @Nullable private String sourceModId = null;
+    @Nullable private String schematicPath = null;
+    @Nullable private ResourceLocation schematicResourceLocation = null;
+    @Nullable private SublevelType sublevelType = SublevelType.neutral;
+    @Nullable private SublevelFunction sublevelFunction = null;
 
 }

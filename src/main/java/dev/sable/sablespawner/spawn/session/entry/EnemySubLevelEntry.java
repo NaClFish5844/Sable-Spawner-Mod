@@ -1,4 +1,4 @@
-package dev.sable.sablespawner.spawn;
+package dev.sable.sablespawner.spawn.session.entry;
 
 import dev.ryanhcode.sable.sublevel.ServerSubLevel;
 import dev.sable.sablespawner.SableSpawner;
@@ -12,7 +12,7 @@ import static dev.sable.sablespawner.SableSpawnerConfig.DEBRIS_DESPAWN_TIME;
 import java.util.UUID;
 
 
-public class EnemySubLevelStatus {
+public class EnemySubLevelEntry {
     @Getter private final UUID uuid;
     private final ServerSubLevel sublevel;
     @Nullable public final EnemyProperty property;
@@ -23,7 +23,7 @@ public class EnemySubLevelStatus {
     private final boolean isDebris;
     @Getter private final boolean initialized;
 
-    public EnemySubLevelStatus(@Nullable EnemyProperty property, ServerSubLevel subLevel, long gameTick) {
+    public EnemySubLevelEntry(@Nullable EnemyProperty property, ServerSubLevel subLevel, long gameTick) {
         this.uuid = subLevel.getUniqueId();
         this.sublevel = subLevel;
         this.property = property;
@@ -51,24 +51,24 @@ public class EnemySubLevelStatus {
     public boolean isDestroyed() { // tick
         if ( isDebris() ) { return false; }
 
-        return this.massPercentage <= this.property.destroyThreshold;
+        return this.massPercentage <= this.property.getDestroyThreshold();
     }
 
     public boolean isFTLCharging() { // 5t
         if ( isDebris() ) { return false; }
         if ( isDestroyed() ) { return false; }
 
-        if ( this.massPercentage <= this.property.FTLChargeThreshold && this.FTLChargeStartTime == -1 ){
+        if ( this.massPercentage <= this.property.getFTLChargeThreshold() && this.FTLChargeStartTime == -1 ){
             this.FTLChargeStartTime = getGameTime();
         }
-        return this.massPercentage <= this.property.FTLChargeThreshold;
+        return this.massPercentage <= this.property.getFTLChargeThreshold();
     }
 
     public boolean isFTLChargeCompleted() { // 5t
         if ( isDebris() ) { return false; }
         if ( this.FTLChargeStartTime == -1 ) { return false; }
 
-        return ( getGameTime() - this.FTLChargeStartTime ) >= this.property.FTLChargeDuration;
+        return ( getGameTime() - this.FTLChargeStartTime ) >= this.property.getFTLChargeDuration();
     }
 
     public boolean isExpired() { // tick, scan

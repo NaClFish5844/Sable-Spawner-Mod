@@ -10,27 +10,28 @@ import java.util.ArrayList;
 @Getter @Setter
 public class EnemyProperty extends AbstractSchematicProperty {
 
-    @Nullable public ArrayList<Integer> availableWorldLevel = new ArrayList<>();
-    @Nullable public ArrayList<String> availableDimension = new ArrayList<>();
+    @Nullable private ArrayList<Integer> availableWorldLevel = new ArrayList<>();
+    @Nullable private ArrayList<String> availableDimension = new ArrayList<>();
 
-    public boolean naturalSpawn = false;
+    private boolean naturalSpawn = false;
+    private int weight = 0;
 
-    public int minSpawnDistance = -1;
-    public int maxSpawnDistance = -1;
+    private int minSpawnDistance = -1;
+    private int maxSpawnDistance = -1;
 
-    public int minSpawnInterval = -1;
-    public int maxSpawnInterval = -1;
+    private int minSpawnInterval = -1;
+    private int maxSpawnInterval = -1;
 
-    public int maxSpawnAmount = 1;
+    private int maxSpawnAmount = 1;
 
-    public int destroyThreshold = -1;
+    private int destroyThreshold = -1;
 
-    public int lifeTime = -1;
+    private int lifeTime = -1;
 
     @SerializedName("ftl_charge_threshold")
-    public int FTLChargeThreshold = -1;
+    private int FTLChargeThreshold = -1;
     @SerializedName("ftl_charge_duration")
-    public int FTLChargeDuration = -1;
+    private int FTLChargeDuration = -1;
 
-    public int value = 0;
+    private int value = 0;
 }

@@ -31,13 +31,19 @@ public class GlobalControl {
     @SubscribeEvent
     public void onServerTick(ServerTickEvent.Post event){
         if ( getGameTime() % SCAN_INTERVAL.getAsInt() == 0) {
-            for ( EnemyControl controller :CONTROLLERS.values() ){ controller.callScan(); }
+            for ( EnemyControl controller :CONTROLLERS.values() ){
+                controller.callScan();
+            }
         }
         if ( getGameTime() % 5 == 0) {
-            for ( EnemyControl controller :CONTROLLERS.values() ){ controller.callPer5Tick(); }
+            for ( EnemyControl controller :CONTROLLERS.values() ){
+                if ( controller.isSpawnerActive() ) { controller.callPer5Tick(); }
+            }
         }
 
-        for ( EnemyControl controller :CONTROLLERS.values() ){ controller.callPerTick(); }
+        for ( EnemyControl controller :CONTROLLERS.values() ){
+            if ( controller.isSpawnerActive() ) { controller.callPerTick(); }
+        }
     }
 
     private long getGameTime() { return SableSpawner.SERVER.overworld().getGameTime(); }

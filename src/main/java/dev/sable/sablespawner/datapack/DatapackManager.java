@@ -48,4 +48,8 @@ public class DatapackManager {
         }
     }
 
+    public PropertyQuery query() {
+        return new PropertyQuery(allProperties.stream().toList());
+    }
+
 }

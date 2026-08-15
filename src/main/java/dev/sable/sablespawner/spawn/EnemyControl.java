@@ -8,8 +8,9 @@ import dev.sable.sablespawner.SableSpawnerConfig;
 import dev.sable.sablespawner.datapack.DatapackManager;
 import dev.sable.sablespawner.datapack.WorldConfig;
 import dev.sable.sablespawner.player.PlayerManager;
+import dev.sable.sablespawner.spawn.session.EnemySubLevelTracker;
+import dev.sable.sablespawner.spawn.session.SpawnQueue;
 import dev.sable.sablespawner.util.BoxUtil;
-import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.phys.AABB;
@@ -21,29 +22,28 @@ public class EnemyControl {
     ServerLevel LEVEL;
     ServerSubLevelContainer CONTAINER;
     Spawner SPAWNER;
-
-    // 这俩玩意疑似需要独立出去了
-    // 跟SPAWNER坐一桌去
-    Object2ObjectOpenHashMap<UUID, EnemySubLevelStatus> ShipTracker = new Object2ObjectOpenHashMap<>();
-    Object2ObjectOpenHashMap<UUID, SpawnTicket> NextSpawn = new Object2ObjectOpenHashMap<>();
+    EnemySubLevelTracker TRACKER;
+    SpawnQueue SPAWN_QUEUE;
 
     public EnemyControl(ServerLevel level){
         this.LEVEL = level;
         this.CONTAINER = SubLevelContainer.getContainer(level);
         this.SPAWNER = new Spawner(level);
+        this.TRACKER = new EnemySubLevelTracker();
+        this.SPAWN_QUEUE = new SpawnQueue(level);
     }
 
 
-    public void callScan() {
+    public void callScan() { // keep running
 
     }
 
-    public void callPerTick() {
+    public void callPerTick() { // only isSpawnerActive==true
 
     }
 
-    public void callPer5Tick() {
-
+    public void callPer5Tick() { // only isSpawnerActive==true
+        SPAWN_QUEUE.updateQueue();
     }
 
     public void spawn() { // ???
@@ -58,7 +58,6 @@ public class EnemyControl {
         // 新船先构造EnemySubLevelStatus再append
     }
 
-    // 5t, after player change
     public boolean isSpawnerActive(){
         return !LEVEL.getPlayers(p -> !p.isSpectator(), 1).isEmpty();
     }
@@ -115,19 +114,9 @@ public class EnemyControl {
 
     }
 
-    public SpawnTicket ticketGenerator() {
-        return null;
-    }
+    // 5t
+    public void onExpired(){
 
-    public void appendShipTrackerEntry(EnemySubLevelStatus status) {
-        this.ShipTracker.put( status.getUuid(), status );
-    }
-
-    public void removeShipTrackerEntry( UUID uuid ) {
-        this.ShipTracker.remove(uuid);
-    }
-    public void removeShipTrackerEntry( ServerSubLevel subLevel ) {
-        removeShipTrackerEntry( subLevel.getUniqueId() );
     }
 
 

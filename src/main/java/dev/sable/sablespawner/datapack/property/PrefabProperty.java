@@ -5,6 +5,6 @@ import lombok.Setter;
 
 @Getter @Setter
 public class PrefabProperty extends AbstractSchematicProperty {
-    public int price = -1;
-    public boolean reusable = false;
+    private int price = 0;
+    private boolean reusable = false;
 }

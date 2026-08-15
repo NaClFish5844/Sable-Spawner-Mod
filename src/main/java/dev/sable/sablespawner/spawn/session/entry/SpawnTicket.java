@@ -1,8 +1,11 @@
-package dev.sable.sablespawner.spawn;
+package dev.sable.sablespawner.spawn.session.entry;
 
 import dev.rew1nd.sableschematicapi.blueprint.SableBlueprint;
+import dev.rew1nd.sableschematicapi.survival.BlueprintPlacementPlan;
 import dev.ryanhcode.sable.companion.math.BoundingBox3d;
+import dev.ryanhcode.sable.companion.math.Pose3d;
 import dev.sable.sablespawner.datapack.property.EnemyProperty;
+import dev.sable.sablespawner.spawn.Spawner;
 import lombok.Getter;
 import net.minecraft.world.phys.Vec3;
 import org.joml.Quaterniond;
@@ -39,6 +42,25 @@ public class SpawnTicket {
         this.scheduledSpawnTime = getScheduledSpawnTime(pushTime);
 
         generateSpawnOrigins();
+    }
+
+    public ArrayList<BlueprintPlacementPlan> getBlueprintPlacementPlans(Vec3 playerPos) {
+        SableBlueprint bp = Spawner.getSableBlueprint(this.property);
+        if (bp == null) { return new ArrayList<>(); }
+
+        ArrayList<BlueprintPlacementPlan> plans = new ArrayList<>(this.spawnOrigins.size());
+
+        for (Vec3 origin : this.spawnOrigins) {
+            Vec3 abs = playerPos.add(origin);
+            Pose3d pose = new Pose3d(
+                    new Vector3d(abs.x, abs.y, abs.z),
+                    getOrientationToTarget(),
+                    new Vector3d(),
+                    new Vector3d(1, 1, 1)
+            );
+            plans.add(BlueprintPlacementPlan.forPose(bp, pose));
+        }
+        return plans;
     }
 
 
@@ -90,13 +112,12 @@ public class SpawnTicket {
                 RANDOM.nextDouble(2) * Math.PI
         );
     }
+    private Quaterniond getOrientationToTarget() {
+        return this.orientationFromTarget.rotateY(Math.PI);
+    }
 
     private long range(long min, long max ) {
         return max - min <= 0 ? min : max - min;
     }
-
-
-
-
 
 }

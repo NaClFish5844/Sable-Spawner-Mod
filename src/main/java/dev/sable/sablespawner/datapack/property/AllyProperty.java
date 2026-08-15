@@ -5,5 +5,5 @@ import lombok.Setter;
 
 @Getter @Setter
 public class AllyProperty extends AbstractSchematicProperty {
-    public boolean placeholder = true;
+    private boolean placeholder = true;
 }
