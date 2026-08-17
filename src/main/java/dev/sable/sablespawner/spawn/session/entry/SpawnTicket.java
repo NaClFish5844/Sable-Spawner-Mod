@@ -5,6 +5,7 @@ import dev.rew1nd.sableschematicapi.survival.BlueprintPlacementPlan;
 import dev.ryanhcode.sable.companion.math.BoundingBox3d;
 import dev.ryanhcode.sable.companion.math.Pose3d;
 import dev.sable.sablespawner.datapack.property.EnemyProperty;
+import dev.sable.sablespawner.player.PlayerStatus;
 import dev.sable.sablespawner.spawn.Spawner;
 import lombok.Getter;
 import net.minecraft.world.phys.Vec3;
@@ -22,26 +23,26 @@ public class SpawnTicket {
     @Getter private final UUID target;
 
     @Getter private final double distanceFromTarget;
-    @Getter private final Quaterniond orientationFromTarget;
+    @Getter private Quaterniond orientationFromTarget;
 
     @Getter private final ArrayList<Vec3> spawnOrigins = new ArrayList<>();
-    @Getter private final long scheduledSpawnTime;
+    @Getter private final long spawnDelay;
 
     private final Random RANDOM = new Random();
 
 
-    public SpawnTicket(EnemyProperty property, UUID target, long pushTime) {
+    public SpawnTicket(EnemyProperty property, UUID target ) {
         this.property = property;
         this.amount = RANDOM.nextInt( this.property.getMaxSpawnAmount() ) + 1;
 
         this.target = target;
 
         this.distanceFromTarget = getDistance();
-        this.orientationFromTarget = getOrientation();
+        flushOrientation();
 
-        this.scheduledSpawnTime = getScheduledSpawnTime(pushTime);
+        this.spawnDelay = flushSpawnDelay();
 
-        generateSpawnOrigins();
+        flushSpawnOrigins();
     }
 
     public ArrayList<BlueprintPlacementPlan> getBlueprintPlacementPlans(Vec3 playerPos) {
@@ -63,8 +64,39 @@ public class SpawnTicket {
         return plans;
     }
 
+    public long getScheduledSpawnTime( PlayerStatus playerStatus ) {
+        return playerStatus.getOutProtectionTime() + this.spawnDelay;
+    }
+    private long flushSpawnDelay() {
+        long minInterval = property.getMinSpawnInterval();
+        long maxInterval = property.getMaxSpawnInterval();
 
-    private void generateSpawnOrigins() {
+        return randomInRange( minInterval, maxInterval );
+    }
+
+    private double getMaxDim( BoundingBox3d box ) {
+        return Math.max( box.size().x, Math.max( box.size().y, box.size().z ) );
+    }
+
+    private double getDistance() {
+        double base = property.getMinSpawnDistance();
+        double max = property.getMaxSpawnDistance();
+        double deviation = RANDOM.nextGaussian(0.5,0.15) * (max - base);
+        return Math.min(max, Math.max(base, base + deviation));
+    }
+
+    public void flushOrientation() {
+        this.orientationFromTarget = new Quaterniond().rotationXYZ(
+                RANDOM.nextDouble(2) * Math.PI,
+                RANDOM.nextDouble(2) * Math.PI,
+                RANDOM.nextDouble(2) * Math.PI
+        );
+
+        flushSpawnOrigins();
+    }
+    private void flushSpawnOrigins() {
+        this.spawnOrigins.clear();
+
         SableBlueprint bp = Spawner.getSableBlueprint(this.property);
         if ( bp == null ) { return; }
 
@@ -90,34 +122,18 @@ public class SpawnTicket {
             ));
         }
     }
-
-    private double getMaxDim( BoundingBox3d box ) {
-        return Math.max( box.size().x, Math.max( box.size().y, box.size().z ) );
-    }
-    private long getScheduledSpawnTime( long pushTime ) {
-        return  pushTime +
-                property.getMinSpawnInterval() +
-                RANDOM.nextLong( range( property.getMinSpawnInterval(), property.getMaxSpawnInterval() ));
-    }
-    private double getDistance() {
-        double base = property.getMinSpawnDistance();
-        double max = property.getMaxSpawnDistance();
-        double deviation = RANDOM.nextGaussian(0.5,0.15) * (max - base);
-        return Math.min(max, Math.max(base, base + deviation));
-    }
-    private Quaterniond getOrientation() {
-        return new Quaterniond().rotationXYZ(
-                RANDOM.nextDouble(2) * Math.PI,
-                RANDOM.nextDouble(2) * Math.PI,
-                RANDOM.nextDouble(2) * Math.PI
-        );
-    }
     private Quaterniond getOrientationToTarget() {
-        return this.orientationFromTarget.rotateY(Math.PI);
+        return new Quaterniond(this.orientationFromTarget).rotateY(Math.PI);
     }
 
-    private long range(long min, long max ) {
-        return max - min <= 0 ? min : max - min;
+    private long randomInRange(long min, long max ) {
+        long upperBound;
+        long lowerBound;
+        if ( min <= 0 || max <= 0 ) { return 2147483647; }
+        upperBound = Math.max( min, max );
+        lowerBound = Math.min( min, max );
+
+        return lowerBound + RANDOM.nextLong( upperBound - lowerBound );
     }
 
 }

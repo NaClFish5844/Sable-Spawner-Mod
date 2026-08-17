@@ -1,5 +1,6 @@
 package dev.sable.sablespawner.spawn;
 
+import dev.rew1nd.sableschematicapi.survival.BlueprintPlacementPlan;
 import dev.ryanhcode.sable.api.sublevel.ServerSubLevelContainer;
 import dev.ryanhcode.sable.api.sublevel.SubLevelContainer;
 import dev.ryanhcode.sable.sublevel.ServerSubLevel;
@@ -7,10 +8,17 @@ import dev.sable.sablespawner.SableSpawner;
 import dev.sable.sablespawner.SableSpawnerConfig;
 import dev.sable.sablespawner.datapack.DatapackManager;
 import dev.sable.sablespawner.datapack.WorldConfig;
+import dev.sable.sablespawner.datapack.property.EnemyProperty;
 import dev.sable.sablespawner.player.PlayerManager;
+import dev.sable.sablespawner.player.PlayerStatus;
 import dev.sable.sablespawner.spawn.session.EnemySubLevelTracker;
 import dev.sable.sablespawner.spawn.session.SpawnQueue;
+import dev.sable.sablespawner.spawn.session.entry.EnemySubLevelEntry;
+import dev.sable.sablespawner.spawn.session.entry.SpawnTicket;
 import dev.sable.sablespawner.util.BoxUtil;
+import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
+import it.unimi.dsi.fastutil.objects.ObjectArrayList;
+import it.unimi.dsi.fastutil.objects.ObjectList;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.phys.AABB;
@@ -25,6 +33,9 @@ public class EnemyControl {
     EnemySubLevelTracker TRACKER;
     SpawnQueue SPAWN_QUEUE;
 
+    ObjectList<EnemySubLevelEntry> deferredEnemySubLevelEntryAppender = new ObjectArrayList<>();
+    ObjectList<EnemySubLevelEntry> deferredEnemySubLevelEntryRemover = new ObjectArrayList<>();
+
     public EnemyControl(ServerLevel level){
         this.LEVEL = level;
         this.CONTAINER = SubLevelContainer.getContainer(level);
@@ -35,34 +46,118 @@ public class EnemyControl {
 
 
     public void callScan() { // keep running
+        SPAWN_QUEUE.updateQueue();
+        scanDebris();
 
+        for ( EnemySubLevelEntry entry : TRACKER.getEntries().values() ) {
+            entry.updateMassPercentage();
+            if ( entry.isExpired() ) { deferredEnemySubLevelEntryRemover.add(entry); }
+        }
+
+        executeAppend();
+        executeRemove();
     }
 
     public void callPerTick() { // only isSpawnerActive==true
-
+        for ( EnemySubLevelEntry entry : TRACKER.getEntries().values() ) {
+            if ( entry.isDestroyed() ) { onDestroyed( entry ); }
+            if ( entry.isDebris() && entry.isExpired() ) { onDebrisExpired(entry); }
+        }
+        executeRemove();
     }
 
     public void callPer5Tick() { // only isSpawnerActive==true
         SPAWN_QUEUE.updateQueue();
+        Object2ObjectOpenHashMap<UUID, PlayerStatus> needNewEnemyPlayers = getPlayerManager().query()
+                .inLevel(LEVEL)
+                .notProtected()
+                .collect();
+
+        for ( PlayerStatus playerStatus : needNewEnemyPlayers.values() ) {
+
+            ServerPlayer player = playerStatus.getPlayer();
+            UUID playerUUID = player.getUUID();
+            if ( isEnemyNearby(player) ) { continue; }
+
+            SpawnTicket ticket = this.SPAWN_QUEUE.getQueue().get(playerUUID);
+            if ( ticket == null ) { continue; }
+
+            if ( ticket.getScheduledSpawnTime( playerStatus ) <= getGameTime() ) {
+                for ( int i = 0; i<5 ;i++ ) {
+                    if ( spawn(ticket) ) {
+                        this.SPAWN_QUEUE.pop(playerUUID);
+                        break;
+                    }
+                    ticket.flushOrientation();
+                }
+
+            }
+        }
+
+        for ( EnemySubLevelEntry entry : TRACKER.getEntries().values() ) {
+            entry.updateMassPercentage();
+
+            if ( entry.isFTLCharging() ) {
+                onFTLCharging(entry);
+
+                if ( entry.isFTLChargeCompleted() ) { onFTLChargeComplete(entry); }
+            }
+
+            if ( entry.isExpired() ) { onShipExpired(entry); }
+        }
+
     }
 
-    public void spawn() { // ???
+    public boolean spawn(SpawnTicket ticket) {
+        UUID targetUUID = ticket.getTarget();
+        ServerPlayer target = (ServerPlayer) LEVEL.getPlayerByUUID(targetUUID);
+        if ( target == null ) { return false; }
 
+        Vec3 targetPos = target.position();
+        ArrayList<BlueprintPlacementPlan> placementPlans = ticket.getBlueprintPlacementPlans( targetPos );
+        for ( BlueprintPlacementPlan plan : placementPlans ) {
+            if( !SPAWNER.BoundBoxVacantDetection(LEVEL, plan) ) { return false; }
+        }
+
+        EnemyProperty property = ticket.getProperty();
+
+        for ( BlueprintPlacementPlan plan : placementPlans ) {
+            ServerSubLevel spawnedSubLevel = SPAWNER.spawnSublevelAsEnemy( property, LEVEL, plan );
+            if ( spawnedSubLevel == null ) { continue; }
+
+            EnemySubLevelEntry entry = new EnemySubLevelEntry( property, spawnedSubLevel, targetUUID );
+
+            this.deferredEnemySubLevelEntryAppender.add(entry);
+        }
+        executeAppend();
+        return true;
     }
 
-    public void scan() { // scan
+    public void scanDebris() {
+        List<ServerSubLevel> allSubLevels = CONTAINER.getAllSubLevels();
+        for ( ServerSubLevel subLevel : allSubLevels ) {
+            if ( isDebrisOfEnemy(subLevel) ) {
+                if ( TRACKER.getEntries().containsKey( subLevel.getUniqueId() ) ) { continue; }
 
+                this.deferredEnemySubLevelEntryAppender.add(new EnemySubLevelEntry(null, subLevel, null ));
+            }
+        }
     }
-
-    public void onSpawned() { // call in spawn()
-        // 新船先构造EnemySubLevelStatus再append
+    public boolean isDebrisOfEnemy(ServerSubLevel subLevel) {
+        if ( subLevel.getSplitFromSubLevel() == null ) { return false; }
+        while (true){
+            UUID fatherUUID = subLevel.getSplitFromSubLevel();
+            ServerSubLevel father = (ServerSubLevel) CONTAINER.getSubLevel( fatherUUID );
+            if ( father == null || father.getName() == null ) { return false; }
+            if ( father.getSplitFromSubLevel() == null ) {
+                return father.getName().contains( getWorldConfig().getEnemyPrefix() );
+            }
+        }
     }
 
     public boolean isSpawnerActive(){
         return !LEVEL.getPlayers(p -> !p.isSpectator(), 1).isEmpty();
     }
-
-    // tick
     public boolean isEnemyNearby(ServerPlayer Player) {
         if ( CONTAINER == null ){ return false; }
 
@@ -91,32 +186,50 @@ public class EnemyControl {
         return false;
     }
 
-    // 5t
-    public boolean isDebrisOfEnemy(ServerSubLevel subLevel) {
-        if ( subLevel.getSplitFromSubLevel() == null ) { return false; }
-        while (true){
-            UUID fatherUUID = subLevel.getSplitFromSubLevel();
-            ServerSubLevel father = (ServerSubLevel) CONTAINER.getSubLevel( fatherUUID );
-            if ( father == null || father.getName() == null ) { return false; }
-            if ( father.getSplitFromSubLevel() == null ) {
-                return father.getName().contains( getWorldConfig().getEnemyPrefix() );
-            }
+    public void onDestroyed(EnemySubLevelEntry enemy) {
+        scanDebris();
+        if ( enemy.isDebris() ) { return; }
+        if ( !enemy.isDestroyed() ) { return; }
+
+        UUID targetUUID = enemy.getTarget();
+        int enemyValue = Objects.requireNonNull(enemy.getProperty()).getValue();
+
+        Object2ObjectOpenHashMap<UUID, PlayerStatus> hashMap = getPlayerManager().query().ofUUID(targetUUID).collect();
+        if ( hashMap.isEmpty() ) { return; }
+
+        PlayerStatus playerStatus = hashMap.values().iterator().next();
+
+        playerStatus.addScore(enemyValue);
+        playerStatus.protect();
+
+        deferredEnemySubLevelEntryRemover.add(enemy);
+    }
+
+    public void onFTLCharging(EnemySubLevelEntry enemy) {
+    }
+    public void onFTLChargeComplete(EnemySubLevelEntry enemy) {
+        deferredEnemySubLevelEntryRemover.add(enemy);
+    }
+    public void onShipExpired(EnemySubLevelEntry enemy){
+        deferredEnemySubLevelEntryRemover.add(enemy);
+    }
+    public void onDebrisExpired(EnemySubLevelEntry debris){
+        deferredEnemySubLevelEntryRemover.add(debris);
+    }
+
+
+    private void executeAppend() {
+        for ( EnemySubLevelEntry entry : deferredEnemySubLevelEntryAppender ) {
+            TRACKER.push(entry);
         }
+        deferredEnemySubLevelEntryAppender.clear();
     }
-
-    // 5t
-    public void onDestroyed(UUID uuid) {
-
-    }
-
-    // 5t
-    public void onFTLChargeComplete(UUID uuid) {
-
-    }
-
-    // 5t
-    public void onExpired(){
-
+    private void executeRemove() {
+        for ( EnemySubLevelEntry entry : deferredEnemySubLevelEntryRemover ) {
+            entry.removeSubLevel();
+            TRACKER.pop(entry);
+        }
+        deferredEnemySubLevelEntryRemover.clear();
     }
 
 

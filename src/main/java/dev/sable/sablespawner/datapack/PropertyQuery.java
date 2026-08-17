@@ -90,8 +90,8 @@ public class PropertyQuery {
         return candidates.getLast();
     }
 
-    private static long weightOf(AbstractSchematicProperty s) {
-        if (s instanceof EnemyProperty enemy) { return enemy.getWeight(); }
+    private static long weightOf(AbstractSchematicProperty prop) {
+        if (prop instanceof EnemyProperty enemy) { return enemy.getWeight(); }
         return 0;
     }
 

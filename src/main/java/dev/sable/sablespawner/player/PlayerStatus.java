@@ -20,15 +20,29 @@ public class PlayerStatus {
     }
 
     public void protect() {
-        player.setData(IN_PROTECTION_TIME, getGameTime());
+        player.setData(
+                IN_PROTECTION_TIME,
+                getGameTime()
+        );
+    }
+    public void protect(long time) {
+        player.setData(
+                IN_PROTECTION_TIME,
+                getGameTime() + time - PLAYER_PROTECTION_TIME.getAsInt()
+        );
     }
     public void removeProtect() {
-        player.setData(IN_PROTECTION_TIME, -1L);
+        player.setData(
+                IN_PROTECTION_TIME,
+                getGameTime() - PLAYER_PROTECTION_TIME.getAsInt()
+        );
     }
     public boolean isInProtection() {
         long protectionTime = player.getData(IN_PROTECTION_TIME);
-        if ( protectionTime == -1 ) { return false; }
         return ( getGameTime() - protectionTime) <= (PLAYER_PROTECTION_TIME.getAsInt() );
+    }
+    public long getOutProtectionTime() {
+        return player.getData(IN_PROTECTION_TIME) + PLAYER_PROTECTION_TIME.getAsInt();
     }
 
     public int getScore() {

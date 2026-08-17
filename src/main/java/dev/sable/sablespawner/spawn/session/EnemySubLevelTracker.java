@@ -15,11 +15,14 @@ public class EnemySubLevelTracker {
         this.entries.put( entry.getUuid(), entry);
     }
 
-    public EnemySubLevelEntry pop( UUID uuid ) {
+    public EnemySubLevelEntry pop(UUID uuid) {
         return this.entries.remove(uuid);
     }
-    public EnemySubLevelEntry pop( ServerSubLevel subLevel ) {
+    public EnemySubLevelEntry pop(ServerSubLevel subLevel) {
         return pop(subLevel.getUniqueId());
+    }
+    public EnemySubLevelEntry pop(EnemySubLevelEntry entry) {
+        return pop(entry.getUuid());
     }
 
 }

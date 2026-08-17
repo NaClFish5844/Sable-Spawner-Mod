@@ -9,25 +9,28 @@ import javax.annotation.Nullable;
 
 import static dev.sable.sablespawner.SableSpawnerConfig.DEBRIS_DESPAWN_TIME;
 
+import java.util.Objects;
 import java.util.UUID;
 
 
 public class EnemySubLevelEntry {
     @Getter private final UUID uuid;
-    private final ServerSubLevel sublevel;
-    @Nullable public final EnemyProperty property;
-    private double totalMass = -1;
+    @Getter private final ServerSubLevel sublevel;
+    @Nullable @Getter private final EnemyProperty property;
+    @Nullable @Getter private final UUID target;
+    @Getter private double totalMass = -1;
     @Getter private double massPercentage = 100.0;
     private final long spawnedGameTick;
     @Getter private long FTLChargeStartTime = -1;
     private final boolean isDebris;
     @Getter private final boolean initialized;
 
-    public EnemySubLevelEntry(@Nullable EnemyProperty property, ServerSubLevel subLevel, long gameTick) {
+    public EnemySubLevelEntry(@Nullable EnemyProperty property, ServerSubLevel subLevel, @Nullable UUID target) {
         this.uuid = subLevel.getUniqueId();
         this.sublevel = subLevel;
         this.property = property;
-        this.spawnedGameTick = gameTick;
+        this.target = target;
+        this.spawnedGameTick = getGameTime();
         this.isDebris = ( subLevel.getSplitFromSubLevel() != null );
 
         this.initialized = this.init();
@@ -40,7 +43,7 @@ public class EnemySubLevelEntry {
         return ( this.totalMass != -1);
     }
 
-    public void updateMassPercentage() { // 5t
+    public void updateMassPercentage() {
         if ( !this.initialized ) { return; }
         if ( this.totalMass <=0 ) { return; }
         if ( isDebris() ) { return; }
@@ -48,41 +51,43 @@ public class EnemySubLevelEntry {
         this.massPercentage =  this.sublevel.getSelfMassTracker().getMass() / this.totalMass * 100.0 ;
     }
 
-    public boolean isDestroyed() { // tick
-        if ( isDebris() ) { return false; }
-
-        return this.massPercentage <= this.property.getDestroyThreshold();
+    public void removeSubLevel() {
+        this.sublevel.markRemoved();
     }
 
-    public boolean isFTLCharging() { // 5t
+    public boolean isFTLCharging() {
         if ( isDebris() ) { return false; }
         if ( isDestroyed() ) { return false; }
 
-        if ( this.massPercentage <= this.property.getFTLChargeThreshold() && this.FTLChargeStartTime == -1 ){
+        if ( this.massPercentage <= Objects.requireNonNull(this.property).getFTLChargeThreshold() && this.FTLChargeStartTime == -1 ){
             this.FTLChargeStartTime = getGameTime();
         }
         return this.massPercentage <= this.property.getFTLChargeThreshold();
     }
-
     public boolean isFTLChargeCompleted() { // 5t
         if ( isDebris() ) { return false; }
         if ( this.FTLChargeStartTime == -1 ) { return false; }
 
-        return ( getGameTime() - this.FTLChargeStartTime ) >= this.property.getFTLChargeDuration();
+        return ( getGameTime() - this.FTLChargeStartTime ) >= Objects.requireNonNull(this.property).getFTLChargeDuration();
     }
+    public boolean isDestroyed() { // tick
+        if ( isDebris() ) { return false; }
 
+        return this.massPercentage <= Objects.requireNonNull(this.property).getDestroyThreshold();
+    }
     public boolean isExpired() { // tick, scan
-        double existTime = getGameTime() - this.spawnedGameTick;
-
         if ( isDebris() ) {
-            return existTime >= DEBRIS_DESPAWN_TIME.getAsInt();
+            return getExistTime() >= DEBRIS_DESPAWN_TIME.getAsInt();
         }else{
-            return existTime >= this.property.getLifeTime();
+            return getExistTime() >= Objects.requireNonNull(this.property).getLifeTime();
         }
     }
+    public boolean isDebris() {
+        return (this.isDebris) || (this.property == null);
+    }
 
-    private boolean isDebris() {
-        return this.isDebris || this.property == null;
+    private long getExistTime() {
+        return (getGameTime() - this.spawnedGameTick);
     }
     private long getGameTime() {
         return SableSpawner.SERVER.overworld().getGameTime();

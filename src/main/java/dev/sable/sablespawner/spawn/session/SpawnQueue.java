@@ -43,20 +43,30 @@ public class SpawnQueue {
 
 
     private void push(UUID playerUUID) {
-        EnemyProperty property = selectEnemy();
+        EnemyProperty property = selectEnemy(playerUUID);
         if ( property == null ) { return; }
-        SpawnTicket ticket = new SpawnTicket( property, playerUUID, getGameTime() );
+
+        SpawnTicket ticket = new SpawnTicket( property, playerUUID );
         this.queue.put( playerUUID, ticket );
     }
     @Nullable public SpawnTicket pop(UUID playerUUID) {
         return this.queue.remove( playerUUID );
     }
+    @Nullable public SpawnTicket pop(ServerPlayer player) {
+        return this.queue.remove( player.getUUID() );
+    }
 
-    @Nullable private EnemyProperty selectEnemy() {
+    @Nullable private EnemyProperty selectEnemy(UUID playerUUID) {
+        Object2ObjectOpenHashMap<UUID, PlayerStatus> hashMap = getPlayerManager().query().ofUUID(playerUUID).collect();
+        if ( hashMap.isEmpty() ) { return null; }
+
+        int playerScoreLevel = hashMap.values().iterator().next().getScoreLevel();
+
         AbstractSchematicProperty picked = getDatapackManager().query()
                 .isEnemy()
                 .isNaturalSpawn()
                 .ofDimension(LEVEL)
+                .ofWorldLevel(playerScoreLevel)
                 .pickEnemy();
         return picked instanceof EnemyProperty enemy ? enemy : null;
     }

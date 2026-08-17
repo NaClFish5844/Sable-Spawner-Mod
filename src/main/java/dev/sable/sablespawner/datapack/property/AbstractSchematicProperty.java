@@ -13,6 +13,9 @@ public abstract class AbstractSchematicProperty {
         datapack,
         folder
     }
+    public enum SourceModId{
+        sable_schematic_api
+    }
     public enum SublevelType{
         ally,
         enemy,
@@ -21,14 +24,17 @@ public abstract class AbstractSchematicProperty {
     }
     public enum SublevelFunction{
         warship,
-        cargo
+        cargo,
+        placeholder
     }
 
     @Nullable private SchematicSource schematicSource = null;
-    @Nullable private String sourceModId = null;
+    @Nullable private SourceModId sourceModId = null;
+
     @Nullable private String schematicPath = null;
     @Nullable private ResourceLocation schematicResourceLocation = null;
+
     @Nullable private SublevelType sublevelType = SublevelType.neutral;
-    @Nullable private SublevelFunction sublevelFunction = null;
+    @Nullable private SublevelFunction sublevelFunction = SublevelFunction.placeholder;
 
 }

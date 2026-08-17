@@ -22,5 +22,9 @@ public class SableSpawnerConfig {
             .comment("玩家保护时间（tick），击败敌人后玩家的保护时间")
             .defineInRange("player_protection_time",1200,10,172800);
 
+    public static final ModConfigSpec.IntValue PLAYER_SPAWN_PROTECTION_TIME = BUILDER
+            .comment("玩家的出生保护时间（tick），登入服务器或切换维度后的保护时间")
+            .defineInRange("player_spawn_protection_time",2400,10,172800);
+
     static final ModConfigSpec SPEC = BUILDER.build();
 }

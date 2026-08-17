@@ -13,6 +13,10 @@ public class PlayerQuery {
 
     public PlayerQuery(Collection<PlayerStatus> source) { this.source = source; }
 
+    public PlayerQuery ofUUID(UUID uuid) {
+        predicate = predicate.and(s -> s.getPlayer().getUUID().equals(uuid) );
+        return this;
+    }
     public PlayerQuery inLevel(ServerLevel level) {
         predicate = predicate.and(s -> s.getPlayer().level() == level);
         return this;

@@ -7,6 +7,8 @@ import net.neoforged.neoforge.event.entity.player.PlayerEvent;
 
 import java.util.UUID;
 
+import static dev.sable.sablespawner.SableSpawnerConfig.PLAYER_SPAWN_PROTECTION_TIME;
+
 public class PlayerManager {
     public static final PlayerManager INSTANCE = new PlayerManager();
 
@@ -14,7 +16,10 @@ public class PlayerManager {
 
     @SubscribeEvent public void onPlayerJoinServer(PlayerEvent.PlayerLoggedInEvent event) {
         ServerPlayer player = (ServerPlayer) event.getEntity();
-        PlayerTracker.put(player.getUUID(), new PlayerStatus(player));
+        PlayerStatus playerStatus = new PlayerStatus(player);
+        playerStatus.protect( PLAYER_SPAWN_PROTECTION_TIME.getAsInt() );
+
+        PlayerTracker.put(player.getUUID(), playerStatus);
     }
     @SubscribeEvent public void onPlayerLeaveServer(PlayerEvent.PlayerLoggedOutEvent event) {
         ServerPlayer player = (ServerPlayer) event.getEntity();
@@ -23,8 +28,18 @@ public class PlayerManager {
     @SubscribeEvent public void onPlayerRespawn(PlayerEvent.PlayerRespawnEvent event) {
         ServerPlayer player = (ServerPlayer) event.getEntity();
         PlayerStatus status = PlayerTracker.get(player.getUUID());
-
-        if (status != null) { status.setPlayer(player); }
+        if (status != null) {
+            status.setPlayer(player);
+            status.protect();
+        }
+    }
+    @SubscribeEvent public void onPlayerChangeDimension(PlayerEvent.PlayerChangedDimensionEvent event) {
+        ServerPlayer player = (ServerPlayer) event.getEntity();
+        PlayerStatus status = PlayerTracker.get(player.getUUID());
+        if (status != null) {
+            status.setPlayer(player);
+            status.protect( PLAYER_SPAWN_PROTECTION_TIME.getAsInt() );
+        }
     }
 
     public PlayerQuery query() {
