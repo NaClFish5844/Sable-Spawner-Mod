@@ -26,5 +26,11 @@ public class SableSpawnerConfig {
             .comment("玩家的出生保护时间（tick），登入服务器或切换维度后的保护时间")
             .defineInRange("player_spawn_protection_time",2400,10,172800);
 
+    public static final ModConfigSpec.IntValue BLUEPRINT_CACHE_MAX_BLOCKS = BUILDER
+            .comment("玩家的出生保护时间（tick），登入服务器或切换维度后的保护时间")
+            .defineInRange("blueprint_cache_max_blocks",100000,10,2147483647);
+
+
+
     static final ModConfigSpec SPEC = BUILDER.build();
 }

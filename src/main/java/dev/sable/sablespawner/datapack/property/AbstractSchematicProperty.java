@@ -1,5 +1,6 @@
 package dev.sable.sablespawner.datapack.property;
 
+import dev.sable.sablespawner.datapack.DatapackManager;
 import lombok.Getter;
 import lombok.Setter;
 import net.minecraft.resources.ResourceLocation;
@@ -9,13 +10,6 @@ import javax.annotation.Nullable;
 
 @Getter @Setter
 public abstract class AbstractSchematicProperty {
-    public enum SchematicSource{
-        datapack,
-        folder
-    }
-    public enum SourceModId{
-        sable_schematic_api
-    }
     public enum SublevelType{
         ally,
         enemy,
@@ -28,9 +22,10 @@ public abstract class AbstractSchematicProperty {
         placeholder
     }
 
-    @Nullable private SchematicSource schematicSource = null;
-    @Nullable private SourceModId sourceModId = null;
+    @Nullable private DatapackManager.BlueprintSourceFileLocation schematicSource = null;
+    @Nullable private DatapackManager.BlueprintSourceModId sourceModId = DatapackManager.BlueprintSourceModId.auto;
 
+    @Nullable private String schematicName = null;
     @Nullable private String schematicPath = null;
     @Nullable private ResourceLocation schematicResourceLocation = null;
 

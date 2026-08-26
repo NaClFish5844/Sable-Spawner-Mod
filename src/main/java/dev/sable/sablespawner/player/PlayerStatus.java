@@ -1,13 +1,13 @@
 package dev.sable.sablespawner.player;
 
 import dev.sable.sablespawner.SableSpawner;
-import dev.sable.sablespawner.datapack.WorldConfig;
+import dev.sable.sablespawner.datapack.property.WorldConfig;
 import lombok.Getter;
 import lombok.Setter;
 import net.minecraft.server.level.ServerPlayer;
 
 import static dev.sable.sablespawner.SableSpawnerConfig.PLAYER_PROTECTION_TIME;
-import static dev.sable.sablespawner.player.PlayerDataAttachment.IN_PROTECTION_TIME;
+import static dev.sable.sablespawner.player.PlayerDataAttachment.OUT_PROTECTION_TIME;
 import static dev.sable.sablespawner.player.PlayerDataAttachment.SCORE;
 
 @Setter
@@ -21,28 +21,27 @@ public class PlayerStatus {
 
     public void protect() {
         player.setData(
-                IN_PROTECTION_TIME,
-                getGameTime()
+                OUT_PROTECTION_TIME,
+                getGameTime() + PLAYER_PROTECTION_TIME.getAsInt()
         );
     }
     public void protect(long time) {
         player.setData(
-                IN_PROTECTION_TIME,
-                getGameTime() + time - PLAYER_PROTECTION_TIME.getAsInt()
+                OUT_PROTECTION_TIME,
+                getGameTime() + time
         );
     }
     public void removeProtect() {
         player.setData(
-                IN_PROTECTION_TIME,
-                getGameTime() - PLAYER_PROTECTION_TIME.getAsInt()
+                OUT_PROTECTION_TIME,
+                getGameTime()
         );
     }
     public boolean isInProtection() {
-        long protectionTime = player.getData(IN_PROTECTION_TIME);
-        return ( getGameTime() - protectionTime) <= (PLAYER_PROTECTION_TIME.getAsInt() );
+        return getGameTime() <= player.getData(OUT_PROTECTION_TIME);
     }
     public long getOutProtectionTime() {
-        return player.getData(IN_PROTECTION_TIME) + PLAYER_PROTECTION_TIME.getAsInt();
+        return player.getData(OUT_PROTECTION_TIME);
     }
 
     public int getScore() {

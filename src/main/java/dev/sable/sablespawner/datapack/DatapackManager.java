@@ -5,6 +5,10 @@ import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import dev.sable.sablespawner.SableSpawner;
 import dev.sable.sablespawner.datapack.property.AbstractSchematicProperty;
+import dev.sable.sablespawner.datapack.property.WorldConfig;
+import dev.sable.sablespawner.datapack.blueprint.BlueprintManager;
+import it.unimi.dsi.fastutil.objects.ObjectArrayList;
+import it.unimi.dsi.fastutil.objects.ObjectList;
 import lombok.Getter;
 import lombok.Setter;
 import net.minecraft.resources.ResourceLocation;
@@ -21,10 +25,22 @@ import java.util.Optional;
 @Getter @Setter
 public class DatapackManager {
     public static final DatapackManager INSTANCE = new DatapackManager();
-    static Logger LOGGER = SableSpawner.LOGGER;
+    public static final BlueprintManager BLUEPRINT_MANAGER = BlueprintManager.INSTANCE;
 
-    private ArrayList<AbstractSchematicProperty> allProperties = new ArrayList<>();
-    private WorldConfig worldConfig = new WorldConfig();
+    public enum BlueprintSourceFileLocation {
+        datapack,
+        folder,
+        invalid
+    }
+    public enum BlueprintSourceModId {
+        sable_schematic_api,
+        auto,
+        invalid
+    }
+
+    private ObjectList<AbstractSchematicProperty> PROPERTY_MANAGER = new ObjectArrayList<>();
+    private ObjectList<WorldConfig> WORLDCONFIG_MANAGER = new ObjectArrayList<>();
+
 
     public void loadDatapack( Map<ResourceLocation, JsonElement> files, ResourceManager resourceManager ) {
         ArrayList<AbstractSchematicProperty> properties = new ArrayList<>();
@@ -35,7 +51,7 @@ public class DatapackManager {
             try {
                 properties.addAll(LoadDatapack.loadProperty(entry.getValue().getAsJsonObject()));
             } catch (RuntimeException e) {
-                LOGGER.warn("跳过无效数据包文件 {}: {}", entry.getKey(), e.toString());
+                getLogger().warn("跳过无效数据包文件 {}: {}", entry.getKey(), e.toString());
             }
         }
         allProperties = properties;
@@ -55,6 +71,13 @@ public class DatapackManager {
 
     public PropertyQuery query() {
         return new PropertyQuery(allProperties.stream().toList());
+    }
+
+    private static Logger getLogger() {
+        return SableSpawner.LOGGER;
+    }
+    private static BlueprintManager getBlueprintManager() {
+        return DatapackManager.BLUEPRINT_MANAGER;
     }
 
 }

@@ -7,7 +7,7 @@ import dev.ryanhcode.sable.sublevel.ServerSubLevel;
 import dev.sable.sablespawner.SableSpawner;
 import dev.sable.sablespawner.SableSpawnerConfig;
 import dev.sable.sablespawner.datapack.DatapackManager;
-import dev.sable.sablespawner.datapack.WorldConfig;
+import dev.sable.sablespawner.datapack.property.WorldConfig;
 import dev.sable.sablespawner.datapack.property.EnemyProperty;
 import dev.sable.sablespawner.player.PlayerManager;
 import dev.sable.sablespawner.player.PlayerStatus;
@@ -121,9 +121,19 @@ public class EnemyControl {
 
         EnemyProperty property = ticket.getProperty();
 
+        ObjectList<ServerSubLevel> buffer = new ObjectArrayList<>();
+
         for ( BlueprintPlacementPlan plan : placementPlans ) {
             ServerSubLevel spawnedSubLevel = SPAWNER.spawnSublevelAsEnemy( property, LEVEL, plan );
-            if ( spawnedSubLevel == null ) { continue; }
+            buffer.add(spawnedSubLevel);
+
+            if ( spawnedSubLevel == null ) {
+                for ( ServerSubLevel s : buffer ) {
+                    if ( s != null ) { s.markRemoved(); }
+                }
+                this.deferredEnemySubLevelEntryAppender.clear();
+                return false;
+            }
 
             EnemySubLevelEntry entry = new EnemySubLevelEntry( property, spawnedSubLevel, targetUUID );
 
@@ -134,6 +144,8 @@ public class EnemyControl {
     }
 
     public void scanDebris() {
+        if ( CONTAINER == null ){ return; }
+
         List<ServerSubLevel> allSubLevels = CONTAINER.getAllSubLevels();
         for ( ServerSubLevel subLevel : allSubLevels ) {
             if ( isDebrisOfEnemy(subLevel) ) {
@@ -166,8 +178,13 @@ public class EnemyControl {
         Vec3 playerWorldPos = Player.position();
 
         String enemyPrefix = getWorldConfig().getEnemyPrefix();
-        int enemyDetectionDistance = SableSpawnerConfig.ENEMY_DETECTION_DISTANCE.getAsInt();
-        AABB detectionBox = AABB.ofSize(playerWorldPos,enemyDetectionDistance,enemyDetectionDistance,enemyDetectionDistance);
+        int enemyDetectionRadius = SableSpawnerConfig.ENEMY_DETECTION_DISTANCE.getAsInt();
+        AABB detectionBox = AABB.ofSize(
+                playerWorldPos,
+                enemyDetectionRadius * 2,
+                enemyDetectionRadius * 2,
+                enemyDetectionRadius * 2
+        );
         List<ServerSubLevel> sublevelList = CONTAINER.getAllSubLevels();
 
         for (ServerSubLevel sublevel: sublevelList) {

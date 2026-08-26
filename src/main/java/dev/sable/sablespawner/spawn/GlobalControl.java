@@ -29,6 +29,14 @@ public class GlobalControl {
     }
 
     @SubscribeEvent
+    public void onLevelUnload(LevelEvent.Unload event) {
+        if ( !( event.getLevel() instanceof ServerLevel level ) ) { return; }
+
+        String dim = level.dimension().location().toString();
+        CONTROLLERS.remove(dim);
+    }
+
+    @SubscribeEvent
     public void onServerTick(ServerTickEvent.Post event){
         if ( getGameTime() % SCAN_INTERVAL.getAsInt() == 0) {
             for ( EnemyControl controller :CONTROLLERS.values() ){
@@ -45,6 +53,7 @@ public class GlobalControl {
             if ( controller.isSpawnerActive() ) { controller.callPerTick(); }
         }
     }
+
 
     private long getGameTime() { return SableSpawner.SERVER.overworld().getGameTime(); }
     private PlayerManager getPlayerManager() { return SableSpawner.PLAYER_MANAGER; }

@@ -7,6 +7,7 @@ import net.minecraft.server.level.ServerLevel;
 import javax.annotation.Nullable;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Objects;
 import java.util.Random;
 import java.util.function.Predicate;
 
@@ -48,6 +49,10 @@ public class PropertyQuery {
         return this;
     }
 
+    public PropertyQuery ofName(String name) {
+        predicate = predicate.and(s -> Objects.equals(s.getSchematicName(), name) );
+        return this;
+    }
     public PropertyQuery ofWorldLevel(int playerScoreLevel) {
         predicate = predicate.and(s -> {
             if (!(s instanceof EnemyProperty enemy)) { return false; }

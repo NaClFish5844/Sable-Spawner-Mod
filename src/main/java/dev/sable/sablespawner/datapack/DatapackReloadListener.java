@@ -2,6 +2,7 @@ package dev.sable.sablespawner.datapack;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonElement;
+import dev.sable.sablespawner.SableSpawner;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.packs.resources.ResourceManager;
 import net.minecraft.server.packs.resources.SimpleJsonResourceReloadListener;
@@ -26,4 +27,5 @@ public class DatapackReloadListener extends SimpleJsonResourceReloadListener {
     {
         manager.loadDatapack(files, resourceManager);
     }
+
 }

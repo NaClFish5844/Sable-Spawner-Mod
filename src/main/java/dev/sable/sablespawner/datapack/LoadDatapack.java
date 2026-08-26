@@ -3,11 +3,8 @@ package dev.sable.sablespawner.datapack;
 import com.google.gson.*;
 import com.google.gson.annotations.SerializedName;
 import dev.sable.sablespawner.SableSpawner;
-import dev.sable.sablespawner.datapack.property.AbstractSchematicProperty;
-import dev.sable.sablespawner.datapack.property.AllyProperty;
-import dev.sable.sablespawner.datapack.property.EnemyProperty;
-import dev.sable.sablespawner.datapack.property.PrefabProperty;
-import dev.sable.sablespawner.datapack.schematics.SchematicProvider;
+import dev.sable.sablespawner.datapack.property.*;
+import dev.sable.sablespawner.datapack.blueprint.BlueprintProvider;
 import net.minecraft.resources.ResourceLocation;
 import org.slf4j.Logger;
 
@@ -27,8 +24,8 @@ public class LoadDatapack {
 
     static Logger LOGGER = SableSpawner.LOGGER;
 
-    private static final Set<String> SCHEMATIC_SOURCES = enumNames(AbstractSchematicProperty.SchematicSource.class);
-    private static final Set<String> SOURCE_MOD_IDS = enumNames(AbstractSchematicProperty.SourceModId.class);
+    private static final Set<String> SCHEMATIC_SOURCES = enumNames(DatapackManager.BlueprintSourceFileLocation.class);
+    private static final Set<String> SOURCE_MOD_IDS = enumNames(DatapackManager.BlueprintSourceModId.class);
     private static final Set<String> SUBLEVEL_TYPES = enumNames(AbstractSchematicProperty.SublevelType.class);
     private static final Set<String> SUBLEVEL_FUNCTIONS = enumNames(AbstractSchematicProperty.SublevelFunction.class);
 
@@ -240,13 +237,13 @@ public class LoadDatapack {
         prop.setSublevelType(type);
 
         if (root.has("schematic_source")) {
-            prop.setSchematicSource(AbstractSchematicProperty.SchematicSource.valueOf(root.get("schematic_source").getAsString()));
+            prop.setSchematicSource(DatapackManager.BlueprintSourceFileLocation.valueOf(root.get("schematic_source").getAsString()));
         }
 
         if (root.has("source_mod_id")) {
             String source = root.get("source_mod_id").getAsString();
             switch ( source ) {
-                case "sable_schematic_api" -> prop.setSourceModId( AbstractSchematicProperty.SourceModId.sable_schematic_api );
+                case "sable_schematic_api" -> prop.setSourceModId( DatapackManager.BlueprintSourceModId.sable_schematic_api );
                 // 以后可能会加自动文件格式推断
             }
         }
@@ -254,9 +251,9 @@ public class LoadDatapack {
         if (root.has("schematic_name")) {
             String name = root.get("schematic_name").getAsString();
 
-            if (prop.getSchematicSource() == AbstractSchematicProperty.SchematicSource.folder) {
-                if (prop.getSourceModId() == AbstractSchematicProperty.SourceModId.sable_schematic_api) {
-                    prop.setSchematicPath(SchematicProvider.getSableSchematicApiFullPath(name));
+            if (prop.getSchematicSource() == DatapackManager.BlueprintSourceFileLocation.folder) {
+                if (prop.getSourceModId() == DatapackManager.BlueprintSourceModId.sable_schematic_api) {
+                    prop.setSchematicPath(BlueprintProvider.getSableSchematicApiFullPath(name));
                 } else {
                     LOGGER.warn("folder 蓝图来源未获支持: {}", prop.getSourceModId());
                 }

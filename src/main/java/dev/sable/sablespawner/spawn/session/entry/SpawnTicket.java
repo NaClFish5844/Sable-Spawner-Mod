@@ -130,7 +130,7 @@ public class SpawnTicket {
         long upperBound;
         long lowerBound;
         if ( min <= 0 || max <= 0 ) { return 2147483647; }
-        upperBound = Math.max( min, max );
+        upperBound = Math.max( min, max ) + 1 ;
         lowerBound = Math.min( min, max );
 
         return lowerBound + RANDOM.nextLong( upperBound - lowerBound );
