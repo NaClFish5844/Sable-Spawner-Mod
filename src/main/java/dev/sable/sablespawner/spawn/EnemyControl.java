@@ -8,7 +8,7 @@ import dev.sable.sablespawner.SableSpawner;
 import dev.sable.sablespawner.SableSpawnerConfig;
 import dev.sable.sablespawner.datapack.DatapackManager;
 import dev.sable.sablespawner.datapack.property.WorldConfig;
-import dev.sable.sablespawner.datapack.property.EnemyProperty;
+import dev.sable.sablespawner.datapack.property.sublevel.EnemyProperty;
 import dev.sable.sablespawner.player.PlayerManager;
 import dev.sable.sablespawner.player.PlayerStatus;
 import dev.sable.sablespawner.spawn.session.EnemySubLevelTracker;
@@ -23,6 +23,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
+import org.joml.Vector3d;
 
 import java.util.*;
 
@@ -88,7 +89,6 @@ public class EnemyControl {
                         this.SPAWN_QUEUE.pop(playerUUID);
                         break;
                     }
-                    ticket.flushOrientation();
                 }
 
             }
@@ -113,8 +113,14 @@ public class EnemyControl {
         ServerPlayer target = (ServerPlayer) LEVEL.getPlayerByUUID(targetUUID);
         if ( target == null ) { return false; }
 
-        Vec3 targetPos = target.position();
-        ArrayList<BlueprintPlacementPlan> placementPlans = ticket.getBlueprintPlacementPlans( targetPos );
+        Vector3d targetPos = new Vector3d(
+                target.position().x,
+                target.position().y,
+                target.position().z
+                );
+        ObjectList<BlueprintPlacementPlan> placementPlans = ticket.getBlueprintPlacementPlans( targetPos );
+        if ( placementPlans.isEmpty() ) { return false; }
+
         for ( BlueprintPlacementPlan plan : placementPlans ) {
             if( !SPAWNER.BoundBoxVacantDetection(LEVEL, plan) ) { return false; }
         }

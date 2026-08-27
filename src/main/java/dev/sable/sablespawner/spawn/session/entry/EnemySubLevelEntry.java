@@ -2,7 +2,7 @@ package dev.sable.sablespawner.spawn.session.entry;
 
 import dev.ryanhcode.sable.sublevel.ServerSubLevel;
 import dev.sable.sablespawner.SableSpawner;
-import dev.sable.sablespawner.datapack.property.EnemyProperty;
+import dev.sable.sablespawner.datapack.property.sublevel.EnemyProperty;
 import lombok.Getter;
 
 import javax.annotation.Nullable;

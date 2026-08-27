@@ -5,6 +5,10 @@ import com.google.gson.annotations.SerializedName;
 import dev.sable.sablespawner.SableSpawner;
 import dev.sable.sablespawner.datapack.property.*;
 import dev.sable.sablespawner.datapack.blueprint.BlueprintProvider;
+import dev.sable.sablespawner.datapack.property.sublevel.AbstractSchematicProperty;
+import dev.sable.sablespawner.datapack.property.sublevel.AllyProperty;
+import dev.sable.sablespawner.datapack.property.sublevel.EnemyProperty;
+import dev.sable.sablespawner.datapack.property.sublevel.PrefabProperty;
 import net.minecraft.resources.ResourceLocation;
 import org.slf4j.Logger;
 

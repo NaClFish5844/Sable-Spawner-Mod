@@ -10,7 +10,8 @@ public class WorldConfig {
     public enum Pattern {
         space,
         ocean,
-        land
+        land,
+        invalid
     }
     private String dimensionName;
 

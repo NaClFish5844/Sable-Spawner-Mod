@@ -1,7 +1,7 @@
 package dev.sable.sablespawner.datapack;
 
-import dev.sable.sablespawner.datapack.property.AbstractSchematicProperty;
-import dev.sable.sablespawner.datapack.property.EnemyProperty;
+import dev.sable.sablespawner.datapack.property.sublevel.AbstractSchematicProperty;
+import dev.sable.sablespawner.datapack.property.sublevel.EnemyProperty;
 import net.minecraft.server.level.ServerLevel;
 
 import javax.annotation.Nullable;

@@ -2,8 +2,8 @@ package dev.sable.sablespawner.spawn.session;
 
 import dev.sable.sablespawner.SableSpawner;
 import dev.sable.sablespawner.datapack.DatapackManager;
-import dev.sable.sablespawner.datapack.property.AbstractSchematicProperty;
-import dev.sable.sablespawner.datapack.property.EnemyProperty;
+import dev.sable.sablespawner.datapack.property.sublevel.AbstractSchematicProperty;
+import dev.sable.sablespawner.datapack.property.sublevel.EnemyProperty;
 import dev.sable.sablespawner.player.PlayerManager;
 import dev.sable.sablespawner.player.PlayerStatus;
 import dev.sable.sablespawner.spawn.session.entry.SpawnTicket;

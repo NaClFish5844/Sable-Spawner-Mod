@@ -4,7 +4,7 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.JsonParser;
 import dev.sable.sablespawner.SableSpawner;
-import dev.sable.sablespawner.datapack.property.AbstractSchematicProperty;
+import dev.sable.sablespawner.datapack.property.sublevel.AbstractSchematicProperty;
 import dev.sable.sablespawner.datapack.property.WorldConfig;
 import dev.sable.sablespawner.datapack.blueprint.BlueprintManager;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
@@ -79,5 +79,6 @@ public class DatapackManager {
     private static BlueprintManager getBlueprintManager() {
         return DatapackManager.BLUEPRINT_MANAGER;
     }
+
 
 }
