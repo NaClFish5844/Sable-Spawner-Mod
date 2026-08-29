@@ -1,61 +1,63 @@
-package dev.sable.sablespawner.datapack;
+package dev.sable.sablespawner.datapack.query;
 
+import dev.sable.sablespawner.datapack.blueprint.PropertyKey;
 import dev.sable.sablespawner.datapack.property.sublevel.AbstractSchematicProperty;
 import dev.sable.sablespawner.datapack.property.sublevel.EnemyProperty;
+import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import net.minecraft.server.level.ServerLevel;
 
 import javax.annotation.Nullable;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Objects;
 import java.util.Random;
 import java.util.function.Predicate;
 
 public class PropertyQuery {
-    private final Collection<AbstractSchematicProperty> source;
-    private Predicate<AbstractSchematicProperty> predicate = s -> true;
+    private final Object2ObjectOpenHashMap<PropertyKey, AbstractSchematicProperty> source;
+    private Predicate<AbstractSchematicProperty> keyPredicate = k -> true;
+    private Predicate<AbstractSchematicProperty> propertyPredicate = p -> true;
 
     private final Random RANDOM = new Random();
 
-    public PropertyQuery(Collection<AbstractSchematicProperty> source) { this.source = source; }
+    public PropertyQuery(Object2ObjectOpenHashMap<PropertyKey, AbstractSchematicProperty> source) { this.source = source; }
 
     public PropertyQuery isNaturalSpawn() {
-        predicate = predicate.and(s ->{
-                if ( !(s instanceof EnemyProperty enemy) ) { return false; }
+        propertyPredicate = propertyPredicate.and(p ->{
+                if ( !(p instanceof EnemyProperty enemy) ) { return false; }
                 return enemy.isNaturalSpawn();
                 });
         return this;
     }
 
     public PropertyQuery isEnemy() {
-        predicate = predicate.and(s -> s.getSublevelType() == AbstractSchematicProperty.SublevelType.enemy);
+        propertyPredicate = propertyPredicate.and(p -> p.getSublevelType() == AbstractSchematicProperty.SublevelType.enemy);
         return this;
     }
     public PropertyQuery isAlly() {
-        predicate = predicate.and(s -> s.getSublevelType() == AbstractSchematicProperty.SublevelType.ally);
+        propertyPredicate = propertyPredicate.and(p -> p.getSublevelType() == AbstractSchematicProperty.SublevelType.ally);
         return this;
     }
     public PropertyQuery isPrefab() {
-        predicate = predicate.and(s -> s.getSublevelType() == AbstractSchematicProperty.SublevelType.prefab);
+        propertyPredicate = propertyPredicate.and(p -> p.getSublevelType() == AbstractSchematicProperty.SublevelType.prefab);
         return this;
     }
 
     public PropertyQuery isWarship() {
-        predicate = predicate.and(s -> s.getSublevelFunction() == AbstractSchematicProperty.SublevelFunction.warship);
+        propertyPredicate = propertyPredicate.and(p -> p.getSublevelFunction() == AbstractSchematicProperty.SublevelFunction.warship);
         return this;
     }
     public PropertyQuery isCargo() {
-        predicate = predicate.and(s -> s.getSublevelFunction() == AbstractSchematicProperty.SublevelFunction.cargo);
+        propertyPredicate = propertyPredicate.and(p -> p.getSublevelFunction() == AbstractSchematicProperty.SublevelFunction.cargo);
         return this;
     }
 
     public PropertyQuery ofName(String name) {
-        predicate = predicate.and(s -> Objects.equals(s.getSchematicName(), name) );
+        propertyPredicate = propertyPredicate.and(p -> Objects.equals(p.getSchematicName(), name) );
         return this;
     }
     public PropertyQuery ofWorldLevel(int playerScoreLevel) {
-        predicate = predicate.and(s -> {
-            if (!(s instanceof EnemyProperty enemy)) { return false; }
+        propertyPredicate = propertyPredicate.and(p -> {
+            if (!(p instanceof EnemyProperty enemy)) { return false; }
             ArrayList<Integer> levels = enemy.getAvailableWorldLevel();
             return levels == null || levels.isEmpty() || levels.contains(playerScoreLevel);
         });
@@ -63,8 +65,8 @@ public class PropertyQuery {
     }
     public PropertyQuery ofDimension(ServerLevel level) {
         String dimensionName = level.dimension().location().toString();
-        predicate = predicate.and(s -> {
-            if (!(s instanceof EnemyProperty enemy)) { return false; }
+        propertyPredicate = propertyPredicate.and(p -> {
+            if (!(p instanceof EnemyProperty enemy)) { return false; }
             ArrayList<String> dimensions = enemy.getAvailableDimension();
             return dimensions == null || dimensions.isEmpty() || dimensions.contains(dimensionName);
         });
@@ -101,10 +103,11 @@ public class PropertyQuery {
     }
 
 
+    // 要改
     public ArrayList<AbstractSchematicProperty> collect() {
         ArrayList<AbstractSchematicProperty> result = new ArrayList<>();
         for (AbstractSchematicProperty s : source) {
-            if (predicate.test(s)) { result.add(s); }
+            if (propertyPredicate.test(s)) { result.add(s); }
         }
         return result;
     }

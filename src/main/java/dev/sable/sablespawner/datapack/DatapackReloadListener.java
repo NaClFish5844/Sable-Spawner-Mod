@@ -12,11 +12,9 @@ import org.jetbrains.annotations.NotNull;
 import java.util.Map;
 
 public class DatapackReloadListener extends SimpleJsonResourceReloadListener {
-    private final DatapackManager manager;
 
-    public DatapackReloadListener(DatapackManager manager) {
-        super(new Gson(), "sablespawner/properties");
-        this.manager = manager;
+    public DatapackReloadListener() {
+        super(new Gson(), "sablespawner");
     }
 
     @Override
@@ -25,7 +23,11 @@ public class DatapackReloadListener extends SimpleJsonResourceReloadListener {
         @NotNull ResourceManager resourceManager,
         @NotNull ProfilerFiller profiler)
     {
-        manager.loadDatapack(files, resourceManager);
+        getDatapackManager().loadDatapack(files, resourceManager);
+    }
+
+    private static DatapackManager getDatapackManager() {
+        return SableSpawner.DATAPACK_MANAGER;
     }
 
 }

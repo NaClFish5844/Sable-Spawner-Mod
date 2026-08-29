@@ -58,6 +58,6 @@ public class SableSpawner {
 
     @SubscribeEvent
     public void onAddReloadListener(AddReloadListenerEvent event) {
-        event.addListener(new DatapackReloadListener(DATAPACK_MANAGER));
+        event.addListener( new DatapackReloadListener() );
     }
 }

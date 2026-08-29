@@ -14,10 +14,10 @@ import java.util.List;
 public class BlueprintProvider {
     private BlueprintProvider(){}
 
-    public void scanAllBlueprints() {
+    public static void scanAllBlueprints() {
 
     }
-    public void readAllBlueprints() {
+    public static void readAllBlueprints() {
 
     }
     private DatapackManager.BlueprintSourceModId parseAutoSource() {

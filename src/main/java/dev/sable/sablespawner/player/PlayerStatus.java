@@ -1,7 +1,7 @@
 package dev.sable.sablespawner.player;
 
 import dev.sable.sablespawner.SableSpawner;
-import dev.sable.sablespawner.datapack.property.WorldConfig;
+import dev.sable.sablespawner.datapack.property.config.WorldConfig;
 import lombok.Getter;
 import lombok.Setter;
 import net.minecraft.server.level.ServerPlayer;

@@ -7,7 +7,7 @@ import dev.ryanhcode.sable.sublevel.ServerSubLevel;
 import dev.sable.sablespawner.SableSpawner;
 import dev.sable.sablespawner.SableSpawnerConfig;
 import dev.sable.sablespawner.datapack.DatapackManager;
-import dev.sable.sablespawner.datapack.property.WorldConfig;
+import dev.sable.sablespawner.datapack.property.config.WorldConfig;
 import dev.sable.sablespawner.datapack.property.sublevel.EnemyProperty;
 import dev.sable.sablespawner.player.PlayerManager;
 import dev.sable.sablespawner.player.PlayerStatus;

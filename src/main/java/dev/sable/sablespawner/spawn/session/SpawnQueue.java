@@ -62,7 +62,7 @@ public class SpawnQueue {
 
         int playerScoreLevel = hashMap.values().iterator().next().getScoreLevel();
 
-        AbstractSchematicProperty picked = getDatapackManager().query()
+        AbstractSchematicProperty picked = getDatapackManager().propertyQuery()
                 .isEnemy()
                 .isNaturalSpawn()
                 .ofDimension(LEVEL)

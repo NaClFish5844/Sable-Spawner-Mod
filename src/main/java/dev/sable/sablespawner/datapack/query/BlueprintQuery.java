@@ -1,7 +1,8 @@
-package dev.sable.sablespawner.datapack;
+package dev.sable.sablespawner.datapack.query;
 
+import dev.sable.sablespawner.datapack.DatapackManager;
 import dev.sable.sablespawner.datapack.blueprint.BlueprintEntry;
-import dev.sable.sablespawner.datapack.blueprint.BlueprintKey;
+import dev.sable.sablespawner.datapack.blueprint.PropertyKey;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import it.unimi.dsi.fastutil.objects.ObjectList;
@@ -14,23 +15,23 @@ public class BlueprintQuery {
     // template
     // will be rewritten
 
-    private final Object2ObjectOpenHashMap<BlueprintKey, BlueprintEntry> source;
-    private Predicate<BlueprintKey> keyPredicate = k -> true;
+    private final Object2ObjectOpenHashMap<PropertyKey, BlueprintEntry> source;
+    private Predicate<PropertyKey> keyPredicate = k -> true;
     private Predicate<BlueprintEntry> entryPredicate = e -> true;
 
-    public BlueprintQuery(Object2ObjectOpenHashMap<BlueprintKey, BlueprintEntry> source) { this.source = source; }
+    public BlueprintQuery(Object2ObjectOpenHashMap<PropertyKey, BlueprintEntry> source) { this.source = source; }
 
     public BlueprintQuery ofName(String name) {
-        keyPredicate = keyPredicate.and(k -> Objects.equals(k.blueprintName(), name) );
+        keyPredicate = keyPredicate.and(k -> Objects.equals(k.name(), name) );
         return this;
     }
     public BlueprintQuery nameContains(String part) {
-        keyPredicate = keyPredicate.and(k -> k.blueprintName() != null && k.blueprintName().contains(part));
+        keyPredicate = keyPredicate.and(k -> k.name() != null && k.name().contains(part));
         return this;
     }
     public BlueprintQuery nameContainsIgnoreCase(String part) {
-        keyPredicate = keyPredicate.and(k -> k.blueprintName() != null
-                && k.blueprintName().toLowerCase().contains(part.toLowerCase()));
+        keyPredicate = keyPredicate.and(k -> k.name() != null
+                && k.name().toLowerCase().contains(part.toLowerCase()));
         return this;
     }
     public BlueprintQuery ofSourceModId(DatapackManager.BlueprintSourceModId modId) {
@@ -64,8 +65,8 @@ public class BlueprintQuery {
     }
 
 
-    public ObjectList<BlueprintKey> collectKeys() {
-        ObjectList<BlueprintKey> result = new ObjectArrayList<>();
+    public ObjectList<PropertyKey> collectKeys() {
+        ObjectList<PropertyKey> result = new ObjectArrayList<>();
 
         for (var entry : source.entrySet()) {
             if (keyPredicate.test(entry.getKey()) && entryPredicate.test(entry.getValue())) {
@@ -76,8 +77,8 @@ public class BlueprintQuery {
         return result;
     }
 
-    public Object2ObjectOpenHashMap<BlueprintKey, BlueprintEntry> collect() {
-        Object2ObjectOpenHashMap<BlueprintKey, BlueprintEntry> result = new Object2ObjectOpenHashMap<>();
+    public Object2ObjectOpenHashMap<PropertyKey, BlueprintEntry> collect() {
+        Object2ObjectOpenHashMap<PropertyKey, BlueprintEntry> result = new Object2ObjectOpenHashMap<>();
 
         for (var entry : source.entrySet()) {
             if (keyPredicate.test(entry.getKey()) && entryPredicate.test(entry.getValue())) {
@@ -88,6 +89,6 @@ public class BlueprintQuery {
         return result;
     }
 
-    @Nullable public BlueprintEntry get(BlueprintKey key) { return source.get(key); }
+    @Nullable public BlueprintEntry get(PropertyKey key) { return source.get(key); }
 
 }
