@@ -14,6 +14,13 @@ public record PropertyKey(
         return new PropertyKey(name, parseModId(modId), sequence);
     }
 
+    public static PropertyKey of(DatapackManager.BlueprintSourceModId modId, int sequence) {
+        return new PropertyKey("未知", modId, sequence);
+    }
+    public static PropertyKey of(String modId, int sequence) {
+        return new PropertyKey("未知", parseModId(modId), sequence);
+    }
+
     private static DatapackManager.BlueprintSourceModId parseModId(String modId) {
         if (modId == null) { return DatapackManager.BlueprintSourceModId.auto; }
         return switch (modId) {

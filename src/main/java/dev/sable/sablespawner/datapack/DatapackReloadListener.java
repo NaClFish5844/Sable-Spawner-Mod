@@ -23,7 +23,8 @@ public class DatapackReloadListener extends SimpleJsonResourceReloadListener {
         @NotNull ResourceManager resourceManager,
         @NotNull ProfilerFiller profiler)
     {
-        getDatapackManager().loadDatapack(files, resourceManager);
+        SableSpawner.RESOURCE_MANAGER = resourceManager;
+        getDatapackManager().loadDatapack( files );
     }
 
     private static DatapackManager getDatapackManager() {

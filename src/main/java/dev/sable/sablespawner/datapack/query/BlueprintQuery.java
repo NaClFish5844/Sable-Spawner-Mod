@@ -76,7 +76,6 @@ public class BlueprintQuery {
 
         return result;
     }
-
     public Object2ObjectOpenHashMap<PropertyKey, BlueprintEntry> collect() {
         Object2ObjectOpenHashMap<PropertyKey, BlueprintEntry> result = new Object2ObjectOpenHashMap<>();
 
@@ -88,7 +87,6 @@ public class BlueprintQuery {
 
         return result;
     }
-
     @Nullable public BlueprintEntry get(PropertyKey key) { return source.get(key); }
 
 }

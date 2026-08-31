@@ -14,12 +14,12 @@ public abstract class AbstractSchematicProperty {
         ally,
         enemy,
         prefab,
-        neutral
+        invalid
     }
     public enum SublevelFunction{
         warship,
         cargo,
-        placeholder
+        invalid
     }
 
     @Nullable private DatapackManager.BlueprintSourceFileLocation schematicSource = null;
@@ -29,7 +29,7 @@ public abstract class AbstractSchematicProperty {
     @Nullable private String schematicPath = null;
     @Nullable private ResourceLocation schematicResourceLocation = null;
 
-    @Nullable private SublevelType sublevelType = SublevelType.neutral;
-    @Nullable private SublevelFunction sublevelFunction = SublevelFunction.placeholder;
+    @Nullable private SublevelType sublevelType = SublevelType.invalid;
+    @Nullable private SublevelFunction sublevelFunction = SublevelFunction.invalid;
 
 }

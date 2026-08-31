@@ -1,25 +1,54 @@
 package dev.sable.sablespawner.datapack.query;
 
+import dev.sable.sablespawner.datapack.DatapackManager;
+import dev.sable.sablespawner.datapack.blueprint.BlueprintEntry;
 import dev.sable.sablespawner.datapack.blueprint.PropertyKey;
 import dev.sable.sablespawner.datapack.property.sublevel.AbstractSchematicProperty;
 import dev.sable.sablespawner.datapack.property.sublevel.EnemyProperty;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
+import it.unimi.dsi.fastutil.objects.ObjectArrayList;
+import it.unimi.dsi.fastutil.objects.ObjectCollection;
+import it.unimi.dsi.fastutil.objects.ObjectList;
 import net.minecraft.server.level.ServerLevel;
 
 import javax.annotation.Nullable;
-import java.util.ArrayList;
-import java.util.Objects;
-import java.util.Random;
+import java.util.*;
 import java.util.function.Predicate;
 
 public class PropertyQuery {
     private final Object2ObjectOpenHashMap<PropertyKey, AbstractSchematicProperty> source;
-    private Predicate<AbstractSchematicProperty> keyPredicate = k -> true;
+    private Predicate<PropertyKey> keyPredicate = k -> true;
     private Predicate<AbstractSchematicProperty> propertyPredicate = p -> true;
 
     private final Random RANDOM = new Random();
 
     public PropertyQuery(Object2ObjectOpenHashMap<PropertyKey, AbstractSchematicProperty> source) { this.source = source; }
+
+    public PropertyQuery ofName(String name) {
+        keyPredicate = keyPredicate.and(k -> Objects.equals(k.name(), name) );
+        return this;
+    }
+    public PropertyQuery nameContains(String part) {
+        keyPredicate = keyPredicate.and(k -> k.name() != null && k.name().contains(part));
+        return this;
+    }
+    public PropertyQuery nameContainsIgnoreCase(String part) {
+        keyPredicate = keyPredicate.and(k -> k.name() != null
+                && k.name().toLowerCase().contains(part.toLowerCase()));
+        return this;
+    }
+    public PropertyQuery ofSequence(int sequence) {
+        keyPredicate = keyPredicate.and(k -> k.sequenceNumber() == sequence );
+        return this;
+    }
+    public PropertyQuery ofSourceModId(DatapackManager.BlueprintSourceModId modId) {
+        keyPredicate = keyPredicate.and(k -> k.sourceMod() == modId );
+        return this;
+    }
+    public PropertyQuery ofSourceModId(String modId) {
+        keyPredicate = keyPredicate.and(k -> Objects.equals(k.sourceMod().toString(), modId) );
+        return this;
+    }
 
     public PropertyQuery isNaturalSpawn() {
         propertyPredicate = propertyPredicate.and(p ->{
@@ -51,10 +80,6 @@ public class PropertyQuery {
         return this;
     }
 
-    public PropertyQuery ofName(String name) {
-        propertyPredicate = propertyPredicate.and(p -> Objects.equals(p.getSchematicName(), name) );
-        return this;
-    }
     public PropertyQuery ofWorldLevel(int playerScoreLevel) {
         propertyPredicate = propertyPredicate.and(p -> {
             if (!(p instanceof EnemyProperty enemy)) { return false; }
@@ -74,14 +99,13 @@ public class PropertyQuery {
     }
 
     @Nullable public AbstractSchematicProperty pickRandomly() {
-        ArrayList<AbstractSchematicProperty> candidates = collect();
+        List<AbstractSchematicProperty> candidates = collect().values().stream().toList();
         if (candidates.isEmpty()) { return null; }
 
         return candidates.get( RANDOM.nextInt(candidates.size()) );
     }
-
     @Nullable public AbstractSchematicProperty pickEnemy() {
-        ArrayList<AbstractSchematicProperty> candidates = collect();
+        List<AbstractSchematicProperty> candidates = collect().values().stream().toList();
         if (candidates.isEmpty()) { return null; }
 
         long totalWeight = 0;
@@ -103,12 +127,28 @@ public class PropertyQuery {
     }
 
 
-    // 要改
-    public ArrayList<AbstractSchematicProperty> collect() {
-        ArrayList<AbstractSchematicProperty> result = new ArrayList<>();
-        for (AbstractSchematicProperty s : source) {
-            if (propertyPredicate.test(s)) { result.add(s); }
+    public ObjectList<PropertyKey> collectKeys() {
+        ObjectList<PropertyKey> result = new ObjectArrayList<>();
+
+        for (var entry : source.entrySet()) {
+            if (keyPredicate.test(entry.getKey()) && propertyPredicate.test(entry.getValue())) {
+                result.add(entry.getKey());
+            }
         }
+
         return result;
     }
+    public Object2ObjectOpenHashMap<PropertyKey, AbstractSchematicProperty> collect() {
+        Object2ObjectOpenHashMap<PropertyKey, AbstractSchematicProperty> result = new Object2ObjectOpenHashMap<>();
+
+        for (Map.Entry<PropertyKey, AbstractSchematicProperty> entry : source.entrySet() ) {
+            if (keyPredicate.test(entry.getKey()) && propertyPredicate.test(entry.getValue())) {
+                result.put(entry.getKey(), entry.getValue());
+            }
+        }
+
+        return result;
+    }
+    @Nullable public AbstractSchematicProperty get(PropertyKey key) { return source.get(key); }
+
 }
