@@ -6,45 +6,99 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.annotations.SerializedName;
 import dev.sable.sablespawner.SableSpawner;
+import dev.sable.sablespawner.datapack.property.config.WorldConfig;
 import dev.sable.sablespawner.datapack.property.sublevel.AbstractSchematicProperty;
 import dev.sable.sablespawner.datapack.property.sublevel.AllyProperty;
 import dev.sable.sablespawner.datapack.property.sublevel.EnemyProperty;
 import dev.sable.sablespawner.datapack.property.sublevel.PrefabProperty;
+import net.minecraft.resources.ResourceLocation;
 import org.slf4j.Logger;
 
 import java.lang.reflect.Field;
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.Set;
-import java.util.TreeSet;
+import java.util.*;
 
 public class Checker {
-    protected record CheckResult(
-            boolean isTopLevelKeysValid,
-            boolean isTypeKeysValid,
-            boolean isAllyPropertyValid,
-            boolean isEnemyPropertyValid,
-            boolean isPrefabPropertyValid
-    ) {}
-
     private static final Gson GSON = LoadDatapack.GSON;
 
-    protected static CheckResult checkPropertyFormat(JsonObject object) {
-        getLogger().info("正在检查文件格式");
+    protected static boolean checkDefaultWorldConfig(Map<ResourceLocation, JsonElement> datapackFiles) {
+        getLogger().info("正在检查默认维度配置文件");
+        ResourceLocation defaultConfigKey = ResourceLocation.fromNamespaceAndPath( "sablespawner", "worldconfig/default" );
+        JsonElement defaultConfig = datapackFiles.get( defaultConfigKey );
+
+        if ( defaultConfig == null ) {
+            getLogger().warn("default.json 缺失，已自动生成默认值");
+            return false;
+        }
+
+        JsonObject defaultConfigObject = defaultConfig.getAsJsonObject();
+
+        return
+                Checker.checkNumberArrListSorted("world_level", defaultConfigObject ) &
+                        Checker.isString("enemy_prefix", defaultConfigObject) &
+                        Checker.isString("ally_prefix", defaultConfigObject) &
+                        Checker.isString("neutral_prefix", defaultConfigObject);
+
+    }
+    protected static WorldConfigCheckResult checkWorldConfigFormat(JsonObject object) {
+        getLogger().info("正在检查维度配置文件格式");
+
+        WorldConfigCheckResult nullableFormat = checkWorldConfigNullableFormat(object);
+
+        boolean isDimensionValid =
+                checkDimensionKey("dimension", object);
+        boolean isSpawnPatternValid =
+                checkStringInEnum("spawn_pattern", object, WorldConfig.Pattern.class);
+
+        return WorldConfigCheckResult.concat(
+                nullableFormat,
+                isDimensionValid,
+                isSpawnPatternValid
+        );
+    }
+    protected static WorldConfigCheckResult checkWorldConfigNullableFormat(JsonObject object) {
+
+        boolean isWorldLevelValid = true;
+        boolean isEnemyPrefixValid = true;
+        boolean isAllyPrefixValid = true;
+        boolean isNeutralPrefixValid = true;
+
+        if ( object.has("world_level") ) {
+            isWorldLevelValid = checkNumberArrListSorted("world_level", object);
+        }
+        if ( object.has("enemy_prefix") ) {
+            isEnemyPrefixValid = isString("enemy_prefix",object);
+        }
+        if ( object.has("ally_prefix") ) {
+            isAllyPrefixValid = isString("ally_prefix",object);
+        }
+        if ( object.has("neutral_prefix") ) {
+            isNeutralPrefixValid = isString("neutral_prefix",object);
+        }
+
+        return WorldConfigCheckResult.ofNullable(
+                isWorldLevelValid,
+                isEnemyPrefixValid,
+                isAllyPrefixValid,
+                isNeutralPrefixValid
+        );
+
+    }
+    protected static PropertyCheckResult checkPropertyFormat(JsonObject object) {
+        getLogger().info("正在检查蓝图属性文件格式");
 
         boolean isTopLevelKeysValid =
                 checkStringInEnum( "schematic_source", object, DatapackManager.BlueprintSourceFileLocation.class ) &
-                checkStringInEnum( "source_mod_id", object, DatapackManager.BlueprintSourceModId.class ) &
-                isString("schematic_name",object);
+                        checkStringInEnum( "source_mod_id", object, DatapackManager.BlueprintSourceModId.class ) &
+                        isString("schematic_name",object);
 
         boolean isTypeKeysValid =
                 checkStringsInEnum("sublevel_types", object, AbstractSchematicProperty.SublevelType.class) &
-                checkStringInEnum("sublevel_function", object, AbstractSchematicProperty.SublevelFunction.class);
+                        checkStringInEnum("sublevel_function", object, AbstractSchematicProperty.SublevelFunction.class);
 
         JsonElement sublevelTypesElement = object.get("sublevel_types");
         if ( !isTypeKeysValid ) {
             getLogger().warn("[sublevel_types] 无效，将不生成具体属性");
-            return new CheckResult(
+            return new PropertyCheckResult(
                     isTopLevelKeysValid,
                     isTypeKeysValid,
                     false,
@@ -67,17 +121,13 @@ public class Checker {
             isPrefabPropertyValid = checkPropertyBlock("prefab_property", object.get("prefab_property"), PrefabProperty.class );
         }
 
-        return new CheckResult(
+        return new PropertyCheckResult(
                 isTopLevelKeysValid,
                 isTypeKeysValid,
                 isAllyPropertyValid,
                 isEnemyPropertyValid,
                 isPrefabPropertyValid
         );
-    }
-    protected static CheckResult checkWorldConfigFormat(JsonObject object) {
-        getLogger().info("正在检查文件格式");
-        return new CheckResult(false,false,false,false,false);
     }
     protected static boolean checkPropertyBlock( String key, JsonElement element, Class<? extends AbstractSchematicProperty> propertyClass) {
         Set<String> propertyKeys = propertyKeyNames(propertyClass);
@@ -97,7 +147,9 @@ public class Checker {
         return true;
     }
 
-    protected static boolean checkNumberInRange( String key, JsonElement element, Number min, Number max ) {
+    protected static boolean checkNumberInRange( String key, JsonObject root, Number min, Number max ) {
+        JsonElement element = root.get(key);
+
         if ( !isNumber( key, element ) ) { return false; }
 
         double value = element.getAsJsonPrimitive().getAsNumber().doubleValue();
@@ -114,7 +166,9 @@ public class Checker {
         }
         return true;
     }
-    protected static boolean checkStringInEnum( String key, JsonElement element, Class< ? extends Enum<?> > enumClass ) {
+    protected static boolean checkStringInEnum( String key, JsonObject root, Class< ? extends Enum<?> > enumClass ) {
+        JsonElement element = root.get(key);
+
         Set<String> valid = enumNamesIgnoreFlag(enumClass);
         if ( !isString( key, element ) ) { return false; }
 
@@ -128,8 +182,9 @@ public class Checker {
 
         return true;
     }
-    protected static boolean checkStringsInEnum( String key, JsonElement element, Class< ? extends Enum<?> > enumClass ) {
-        // 输入jsonArrList
+    protected static boolean checkStringsInEnum( String key, JsonObject root, Class< ? extends Enum<?> > enumClass ) {
+        JsonElement element = root.get(key);
+
         Set<String> valid = enumNamesIgnoreFlag(enumClass);
         if ( !isArrList( key, element ) ) { return false; }
 
@@ -145,7 +200,9 @@ public class Checker {
 
         return true;
     }
-    protected static boolean checkNumberArrListSorted( String key, JsonElement element ) {
+    protected static boolean checkNumberArrListSorted( String key, JsonObject root ) {
+        JsonElement element = root.get(key);
+
         if ( !isArrList( key, element ) ) { return false; }
 
         JsonArray array = element.getAsJsonArray();
@@ -168,18 +225,13 @@ public class Checker {
         }
         return true;
     }
-
-    protected static boolean checkNumberInRange( String key, JsonObject root, Number min, Number max ) {
-        JsonElement element = root.get(key);
-        return checkNumberInRange(key,element,min,max);
-    }
-    protected static boolean checkStringInEnum( String key, JsonObject root, Class< ? extends Enum<?> > enumClass ) {
-        JsonElement element = root.get(key);
-        return checkStringInEnum(key,element,enumClass);
-    }
-    protected static boolean checkNumberArrListSorted( String key, JsonObject root ) {
-        JsonElement element = root.get(key);
-        return checkNumberArrListSorted(key,element);
+    protected static boolean checkDimensionKey( String key, JsonElement element ) {
+        if ( !isString(key, element) ) { return false; }
+        if ( ResourceLocation.tryParse( element.getAsString() ) == null ) {
+            getLogger().warn("[{}] 不是合法的维度标识（应为 namespace:dim，如 deepspace:space）", key);
+            return false;
+        }
+        return true;
     }
 
     protected static ArrayList<Integer> getNoDuplicatedSortedArrList(JsonElement element ) {
@@ -201,7 +253,7 @@ public class Checker {
         return set;
     }
 
-    protected static boolean isNumber(String key, JsonElement element ) {
+    protected static boolean isNumber( String key, JsonElement element ) {
         if (
                 element == null ||
                         ! element.isJsonPrimitive() ||
@@ -212,14 +264,14 @@ public class Checker {
         }
         return true;
     }
-    protected static boolean isInteger(String key, JsonElement element ) {
+    protected static boolean isInteger( String key, JsonElement element ) {
         if ( !isNumber( key, element ) ) { return false; }
         if ( element.getAsJsonPrimitive().getAsBigDecimal().stripTrailingZeros().scale() > 0 ) {
             getLogger().warn("[{}] 不是整数", key);
         }
         return true;
     }
-    protected static boolean isString(String key, JsonElement element ) {
+    protected static boolean isString( String key, JsonElement element ) {
         if (
                 element == null ||
                         ! element.isJsonPrimitive() ||
@@ -252,15 +304,15 @@ public class Checker {
         return true;
     }
 
-    protected static boolean isNumber(String key, JsonObject root ) {
+    protected static boolean isNumber( String key, JsonObject root ) {
         JsonElement element = root.get(key);
         return isNumber(key,element);
     }
-    protected static boolean isInteger(String key, JsonObject root ) {
+    protected static boolean isInteger( String key, JsonObject root ) {
         JsonElement element = root.get(key);
         return isInteger(key,element);
     }
-    protected static boolean isString(String key, JsonObject root ) {
+    protected static boolean isString( String key, JsonObject root ) {
         JsonElement element = root.get(key);
         return isString(key,element);
     }
@@ -302,5 +354,51 @@ public class Checker {
 
     private static Logger getLogger() {
         return SableSpawner.LOGGER;
+    }
+
+    protected record PropertyCheckResult(
+            boolean isTopLevelKeysValid,
+            boolean isTypeKeysValid,
+            boolean isAllyPropertyValid,
+            boolean isEnemyPropertyValid,
+            boolean isPrefabPropertyValid
+    ) {}
+    protected record WorldConfigCheckResult(
+            boolean isWorldLevelValid,
+            boolean isEnemyPrefixValid,
+            boolean isAllyPrefixValid,
+            boolean isNeutralPrefixValid,
+            boolean isDimensionValid,
+            boolean isSpawnPatternValid
+    ) {
+        private static WorldConfigCheckResult ofNullable(
+                boolean isWorldLevelValid,
+                boolean isEnemyPrefixValid,
+                boolean isAllyPrefixValid,
+                boolean isNeutralPrefixValid
+        ) {
+            return new WorldConfigCheckResult(
+                    isWorldLevelValid,
+                    isEnemyPrefixValid,
+                    isAllyPrefixValid,
+                    isNeutralPrefixValid,
+                    false,
+                    false
+            );
+        }
+        private static WorldConfigCheckResult concat(
+                WorldConfigCheckResult nullableResult,
+                boolean isDimensionValid,
+                boolean isSpawnPatternValid
+        ) {
+            return new WorldConfigCheckResult(
+                    nullableResult.isWorldLevelValid,
+                    nullableResult.isEnemyPrefixValid,
+                    nullableResult.isAllyPrefixValid,
+                    nullableResult.isNeutralPrefixValid,
+                    isDimensionValid,
+                    isSpawnPatternValid
+            );
+        }
     }
 }

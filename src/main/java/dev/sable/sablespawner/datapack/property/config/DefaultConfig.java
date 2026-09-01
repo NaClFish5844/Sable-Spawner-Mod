@@ -3,16 +3,32 @@ package dev.sable.sablespawner.datapack.property.config;
 import lombok.Getter;
 import lombok.Setter;
 
-import javax.annotation.Nullable;
-import java.util.ArrayList;
+import java.util.List;
 
-@Getter
-@Setter
+@Getter @Setter
 public class DefaultConfig {
-    @Nullable private String dimensionName = null;
-    private ArrayList<Integer> worldLevel = new ArrayList<>();
+    protected DefaultConfig(List<Integer> worldLevel, String enemyPrefix, String allyPrefix, String neutralPrefix) {
+        this.worldLevel = worldLevel;
+        this.enemyPrefix = enemyPrefix;
+        this.allyPrefix = allyPrefix;
+        this.neutralPrefix = neutralPrefix;
+    }
 
-    private String enemyPrefix = "[ENEMY] ";
-    private String allyPrefix = "[ALLY] ";
-    private String neutralPrefix = "[NEUTRAL] ";
+    public static DefaultConfig of(List<Integer> worldLevel, String enemyPrefix, String allyPrefix, String neutralPrefix) {
+        return new DefaultConfig(worldLevel, enemyPrefix, allyPrefix, neutralPrefix);
+    }
+    public static DefaultConfig ofDefault() {
+        return new DefaultConfig(
+                List.of(0),
+                "[ENEMY] ",
+                "[ALLY] ",
+                "[NEUTRAL] "
+        );
+    }
+
+    private List<Integer> worldLevel;
+
+    private String enemyPrefix;
+    private String allyPrefix;
+    private String neutralPrefix;
 }

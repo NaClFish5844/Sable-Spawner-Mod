@@ -63,16 +63,10 @@ public class BlueprintProvider {
         return files;
     }
 
-
     private DatapackManager.BlueprintSourceModId parseAutoSource() {
         // 这是未填写源mod的蓝图的自动解析 预计非常复杂 以后再说
         return DatapackManager.BlueprintSourceModId.invalid;
     }
-
-    @Deprecated public static String getSableSchematicApiFullPath(String filename) {
-        return FMLPaths.GAMEDIR.get().resolve("Sable-Schematics").resolve(filename).toString();
-    }
-
 
     private static ModList getModList() {
         return ModList.get();

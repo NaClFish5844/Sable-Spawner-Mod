@@ -4,13 +4,13 @@ import com.google.gson.JsonElement;
 import dev.sable.sablespawner.SableSpawner;
 import dev.sable.sablespawner.datapack.blueprint.BlueprintEntry;
 import dev.sable.sablespawner.datapack.blueprint.BlueprintProvider;
-import dev.sable.sablespawner.datapack.blueprint.PropertyKey;
+import dev.sable.sablespawner.datapack.blueprint.BlueprintKey;
 import dev.sable.sablespawner.datapack.property.config.DefaultConfig;
-import dev.sable.sablespawner.datapack.property.sublevel.AbstractSchematicProperty;
+import dev.sable.sablespawner.datapack.property.config.WorldConfig;
+import dev.sable.sablespawner.datapack.property.sublevel.*;
 import dev.sable.sablespawner.datapack.blueprint.BlueprintManager;
 import dev.sable.sablespawner.datapack.query.PropertyQuery;
 import dev.sable.sablespawner.datapack.query.WorldConfigQuery;
-import it.unimi.dsi.fastutil.objects.Object2ObjectMap;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import it.unimi.dsi.fastutil.objects.ObjectList;
@@ -24,6 +24,7 @@ import net.neoforged.fml.loading.FMLPaths;
 import org.slf4j.Logger;
 
 import java.nio.file.Path;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -45,45 +46,67 @@ public class DatapackManager {
     }
 
     public static final BlueprintManager BLUEPRINT_MANAGER = getBlueprintManager();
-    private Object2ObjectOpenHashMap<PropertyKey, BlueprintEntry> BLUEPRINT_BUFFER = getBlueprintBuffer();
-    private Object2ObjectOpenHashMap<PropertyKey, AbstractSchematicProperty> PROPERTY_MANAGER = new Object2ObjectOpenHashMap<>();
-    private Object2ObjectOpenHashMap<String, DefaultConfig> WORLDCONFIG_MANAGER = new Object2ObjectOpenHashMap<>();
+    private static final Object2ObjectOpenHashMap<BlueprintKey, BlueprintEntry> BLUEPRINT_BUFFER = getBlueprintBuffer();
+    private static final Object2ObjectOpenHashMap<PropertyKey, AbstractSchematicProperty> PROPERTY_MANAGER = new Object2ObjectOpenHashMap<>();
+    private static final Object2ObjectOpenHashMap<String, DefaultConfig> WORLDCONFIG_MANAGER = new Object2ObjectOpenHashMap<>();
 
-    public void loadDatapack( Map<ResourceLocation, JsonElement> datapackFiles ) {
-        BLUEPRINT_BUFFER.clear();
+    public static void loadDatapack( Map<ResourceLocation, JsonElement> datapackFiles ) {
         PROPERTY_MANAGER.clear();
         WORLDCONFIG_MANAGER.clear();
-        //更新考虑做成增量式的？
+
+        DefaultConfig defaultConfig = LoadDatapack.parseDefaultWorldConfig(datapackFiles);
+        WORLDCONFIG_MANAGER.put("default", defaultConfig);
 
         for ( Map.Entry<ResourceLocation, JsonElement> fileEntry : datapackFiles.entrySet() ) {
             String key = fileEntry.getKey().toString();
             JsonElement jsonElement = fileEntry.getValue();
+
             getLogger().info("正在加载文件：{}", key);
 
-            if ( key.startsWith("sablespawner:properties") ) {
-                Object2ObjectMap.Entry<PropertyKey, AbstractSchematicProperty> entry = LoadDatapack.parseProperty( jsonElement );
-                if ( entry == null ) {
+            if ( key.startsWith("sablespawner:worldconfig") ) {
+                if ( key.equals("sablespawner:worldconfig/default") ) { continue; }
+                WorldConfig worldConfig = LoadDatapack.parseWorldConfig( jsonElement, defaultConfig );
+
+                if ( worldConfig == null ) {
                     getLogger().warn("文件加载失败：{}", key);
                     continue;
                 }
-                PROPERTY_MANAGER.put( entry.getKey(), entry.getValue() );
+
+                WORLDCONFIG_MANAGER.put( worldConfig.getDimension(), worldConfig );
             }
-            else if ( key.startsWith("sablespawner:worldconfig") ) {
-                Object2ObjectMap.Entry<String, DefaultConfig> entry = LoadDatapack.parseWorldConfig( jsonElement );
-                if ( entry == null ) {
+            else if ( key.startsWith("sablespawner:properties") ) {
+                List<AbstractSchematicProperty> properties = LoadDatapack.parseProperty( jsonElement );
+                if ( properties.isEmpty() ) {
                     getLogger().warn("文件加载失败：{}", key);
                     continue;
                 }
-                WORLDCONFIG_MANAGER.put( entry.getKey(), entry.getValue() );
+                for ( AbstractSchematicProperty property : properties ) {
+                    PropertyKey propertyKey = null;
+                    if ( property instanceof AllyProperty ) {
+                        propertyKey = new PropertyKey(key, AbstractSchematicProperty.SublevelType.ally);
+                    }
+                    if ( property instanceof EnemyProperty ) {
+                        propertyKey = new PropertyKey(key, AbstractSchematicProperty.SublevelType.enemy);
+                    }
+                    if ( property instanceof PrefabProperty ) {
+                        propertyKey = new PropertyKey(key, AbstractSchematicProperty.SublevelType.prefab);
+                    }
+                    PROPERTY_MANAGER.put( propertyKey, property );
+                }
             }
+
             else { getLogger().warn("发现未知文件：{}", key); }
+
         }
     }
 
     public static void loadBlueprints() {
+        BLUEPRINT_BUFFER.clear();
+        //更新考虑做成增量式的？
+
         // 筛选进缓存的
-        ObjectList<PropertyKey> fromDatapack = new ObjectArrayList<>();
-        ObjectList<PropertyKey> fromFolder = new ObjectArrayList<>();
+        ObjectList<BlueprintKey> fromDatapack = new ObjectArrayList<>();
+        ObjectList<BlueprintKey> fromFolder = new ObjectArrayList<>();
 
         Map<ResourceLocation, Resource> datapackBlueprintFiles =
                 getResourceManager().listResources(
@@ -112,10 +135,10 @@ public class DatapackManager {
 
     }
 
-    public PropertyQuery propertyQuery() {
+    public static PropertyQuery propertyQuery() {
         return new PropertyQuery(PROPERTY_MANAGER);
     }
-    public WorldConfigQuery worldConfigQuery() {
+    public static WorldConfigQuery worldConfigQuery() {
         return new WorldConfigQuery(WORLDCONFIG_MANAGER);
     }
 
@@ -128,7 +151,7 @@ public class DatapackManager {
     private static ResourceManager getResourceManager() {
         return SableSpawner.RESOURCE_MANAGER;
     }
-    private static Object2ObjectOpenHashMap<PropertyKey, BlueprintEntry> getBlueprintBuffer() {
+    private static Object2ObjectOpenHashMap<BlueprintKey, BlueprintEntry> getBlueprintBuffer() {
         return BlueprintManager.getBuffer();
     }
     private static ModList getModList() {

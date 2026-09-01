@@ -10,28 +10,57 @@ import java.util.ArrayList;
 @Getter @Setter
 public class EnemyProperty extends AbstractSchematicProperty {
 
-    @Nullable private ArrayList<Integer> availableWorldLevel = new ArrayList<>();
-    @Nullable private ArrayList<String> availableDimension = new ArrayList<>();
+    @Nullable private ArrayList<Integer> availableWorldLevel;
+    @Nullable private ArrayList<String> availableDimension;
 
-    private boolean naturalSpawn = false;
-    private int weight = 0;
+    private boolean naturalSpawn;
+    private int weight;
 
-    private int minSpawnDistance = -1;
-    private int maxSpawnDistance = -1;
+    private int minSpawnDistance;
+    private int maxSpawnDistance;
 
-    private int minSpawnInterval = -1;
-    private int maxSpawnInterval = -1;
+    private int minSpawnInterval;
+    private int maxSpawnInterval;
 
-    private int maxSpawnAmount = 1;
+    private int maxSpawnAmount;
 
-    private int destroyThreshold = -1;
+    private int destroyThreshold;
 
-    private int lifeTime = -1;
+    private int lifeTime;
 
     @SerializedName("ftl_charge_threshold")
-    private int FTLChargeThreshold = -1;
+    private int FTLChargeThreshold;
     @SerializedName("ftl_charge_duration")
-    private int FTLChargeDuration = -1;
+    private int FTLChargeDuration;
 
-    private int value = 0;
+    private int value;
+
+    private EnemyProperty() {
+        super();
+        setSublevelType(SublevelType.enemy);
+
+        this.availableWorldLevel = new ArrayList<>();
+        this.availableDimension = new ArrayList<>();
+        this.naturalSpawn = false;
+        this.weight = 0;
+        this.minSpawnDistance = -1;
+        this.maxSpawnDistance = -1;
+        this.minSpawnInterval = -1;
+        this.maxSpawnInterval = -1;
+        this.maxSpawnAmount = 1;
+        this.destroyThreshold = -1;
+        this.lifeTime = -1;
+        this.FTLChargeThreshold = -1;
+        this.FTLChargeDuration = -1;
+        this.value = 0;
+    }
+
+    public static EnemyProperty ofBasic(AbstractSchematicProperty base) {
+        EnemyProperty prop = new EnemyProperty();
+        prop.copyBaseFrom(base);
+        return prop;
+    }
+    public static EnemyProperty ofDefault() {
+        return new EnemyProperty();
+    }
 }

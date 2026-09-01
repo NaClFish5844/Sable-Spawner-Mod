@@ -1,13 +1,10 @@
 package dev.sable.sablespawner.datapack.query;
 
-import dev.sable.sablespawner.datapack.DatapackManager;
-import dev.sable.sablespawner.datapack.blueprint.BlueprintEntry;
-import dev.sable.sablespawner.datapack.blueprint.PropertyKey;
 import dev.sable.sablespawner.datapack.property.sublevel.AbstractSchematicProperty;
 import dev.sable.sablespawner.datapack.property.sublevel.EnemyProperty;
+import dev.sable.sablespawner.datapack.property.sublevel.PropertyKey;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
-import it.unimi.dsi.fastutil.objects.ObjectCollection;
 import it.unimi.dsi.fastutil.objects.ObjectList;
 import net.minecraft.server.level.ServerLevel;
 
@@ -35,18 +32,6 @@ public class PropertyQuery {
     public PropertyQuery nameContainsIgnoreCase(String part) {
         keyPredicate = keyPredicate.and(k -> k.name() != null
                 && k.name().toLowerCase().contains(part.toLowerCase()));
-        return this;
-    }
-    public PropertyQuery ofSequence(int sequence) {
-        keyPredicate = keyPredicate.and(k -> k.sequenceNumber() == sequence );
-        return this;
-    }
-    public PropertyQuery ofSourceModId(DatapackManager.BlueprintSourceModId modId) {
-        keyPredicate = keyPredicate.and(k -> k.sourceMod() == modId );
-        return this;
-    }
-    public PropertyQuery ofSourceModId(String modId) {
-        keyPredicate = keyPredicate.and(k -> Objects.equals(k.sourceMod().toString(), modId) );
         return this;
     }
 
