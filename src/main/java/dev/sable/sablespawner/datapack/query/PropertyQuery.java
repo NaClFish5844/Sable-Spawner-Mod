@@ -21,17 +21,16 @@ public class PropertyQuery {
 
     public PropertyQuery(Object2ObjectOpenHashMap<PropertyKey, AbstractSchematicProperty> source) { this.source = source; }
 
-    public PropertyQuery ofName(String name) {
-        keyPredicate = keyPredicate.and(k -> Objects.equals(k.name(), name) );
+    public PropertyQuery ofPath(String path) {
+        keyPredicate = keyPredicate.and(k -> Objects.equals(k.path(), path) );
         return this;
     }
     public PropertyQuery nameContains(String part) {
-        keyPredicate = keyPredicate.and(k -> k.name() != null && k.name().contains(part));
+        keyPredicate = keyPredicate.and(k -> k.getName().contains(part));
         return this;
     }
     public PropertyQuery nameContainsIgnoreCase(String part) {
-        keyPredicate = keyPredicate.and(k -> k.name() != null
-                && k.name().toLowerCase().contains(part.toLowerCase()));
+        keyPredicate = keyPredicate.and(k -> k.getName().toLowerCase().contains(part.toLowerCase()));
         return this;
     }
 

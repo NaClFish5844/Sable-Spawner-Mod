@@ -9,7 +9,7 @@ import org.joml.Vector3d;
 import javax.annotation.Nullable;
 import java.util.Random;
 
-public class SpawnPatternUtil {
+public final class SpawnPatternUtil {
     private SpawnPatternUtil() {}
     private static final Random RANDOM = new Random();
 

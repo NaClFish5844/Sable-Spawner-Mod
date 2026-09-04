@@ -42,17 +42,10 @@ public class BlueprintQuery {
         keyPredicate = keyPredicate.and(k -> Objects.equals(k.sourceMod().toString(), modId) );
         return this;
     }
-    public BlueprintQuery ofSequenceNumber(int seq) {
-        keyPredicate = keyPredicate.and(k -> k.sequenceNumber() == seq );
-        return this;
-    }
 
-    public BlueprintQuery fromDatapack() {
-        entryPredicate = entryPredicate.and( BlueprintEntry::fromDatapack );
-        return this;
-    }
+
     public BlueprintQuery fromFolder() {
-        entryPredicate = entryPredicate.and( BlueprintEntry::fromFolder );
+        entryPredicate = entryPredicate.and( BlueprintEntry::isPathRef);
         return this;
     }
     public BlueprintQuery isBuffered() {

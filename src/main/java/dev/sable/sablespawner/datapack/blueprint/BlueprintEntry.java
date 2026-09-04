@@ -1,30 +1,23 @@
 package dev.sable.sablespawner.datapack.blueprint;
 
-import dev.sable.sablespawner.datapack.DatapackManager;
-import net.minecraft.resources.ResourceLocation;
-
 import javax.annotation.Nullable;
 import java.nio.file.Path;
+import java.util.Objects;
 
 public record BlueprintEntry(
-        @Nullable Object blueprintObject,
-        @Nullable ResourceLocation datapackResourceLocation,
-        @Nullable Path filePath
+        @Nullable Object object
 ) {
-    public DatapackManager.BlueprintSourceFileLocation getSourceFileLocationType() {
-        if ( datapackResourceLocation == null && filePath == null ) { return DatapackManager.BlueprintSourceFileLocation.invalid; }
-        if ( datapackResourceLocation != null ) { return DatapackManager.BlueprintSourceFileLocation.datapack; }
-        return DatapackManager.BlueprintSourceFileLocation.folder;
+    public String getType() {
+        if ( object instanceof Path ) { return "Path"; }
+        if ( object != null ) { return object.getClass().getSimpleName(); }
+        return null;
     }
 
-    public boolean fromDatapack() {
-        return getSourceFileLocationType() == DatapackManager.BlueprintSourceFileLocation.datapack;
-    }
-    public boolean fromFolder() {
-        return getSourceFileLocationType() == DatapackManager.BlueprintSourceFileLocation.folder;
+    public boolean isPathRef() {
+        return Objects.equals(this.getType(), "Path");
     }
     public boolean isBuffered() {
-        return blueprintObject != null;
+        return !this.isPathRef();
     }
 
 }

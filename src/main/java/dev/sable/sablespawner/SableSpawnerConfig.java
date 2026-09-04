@@ -27,7 +27,7 @@ public class SableSpawnerConfig {
             .defineInRange("player_spawn_protection_time",2400,10,172800);
 
     public static final ModConfigSpec.IntValue BLUEPRINT_CACHE_MAX_BLOCKS = BUILDER
-            .comment("玩家的出生保护时间（tick），登入服务器或切换维度后的保护时间")
+            .comment("蓝图缓存的最大方块数，方块数量超出此值的大型蓝图将不会进入缓存")
             .defineInRange("blueprint_cache_max_blocks",100000,10,2147483647);
 
 

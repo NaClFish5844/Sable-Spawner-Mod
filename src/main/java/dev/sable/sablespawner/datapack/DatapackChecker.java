@@ -17,26 +17,53 @@ import org.slf4j.Logger;
 import java.lang.reflect.Field;
 import java.util.*;
 
-public class Checker {
-    private static final Gson GSON = LoadDatapack.GSON;
+public class DatapackChecker {
+    private static final Gson GSON = DatapackLoader.GSON;
 
-    protected static boolean checkDefaultWorldConfig(Map<ResourceLocation, JsonElement> datapackFiles) {
-        getLogger().info("正在检查默认维度配置文件");
-        ResourceLocation defaultConfigKey = ResourceLocation.fromNamespaceAndPath( "sablespawner", "worldconfig/default" );
-        JsonElement defaultConfig = datapackFiles.get( defaultConfigKey );
+    private static final Set<String> PROPERTY_TOP_LEVEL_KEYS = Set.of(
+            "schematic_source", "source_mod_id", "schematic_name",
+            "sublevel_types", "sublevel_function",
+            "enemy_property", "ally_property", "prefab_property"
+    );
+    private static final Set<String> WORLDCONFIG_TOP_LEVEL_KEYS = Set.of(
+            "dimension", "world_level",
+            "enemy_prefix", "ally_prefix", "neutral_prefix",
+            "spawn_pattern"
+    );
 
-        if ( defaultConfig == null ) {
-            getLogger().warn("default.json 缺失，已自动生成默认值");
-            return false;
+    protected static boolean checkMetaFormat(JsonObject object) {
+        getLogger().info("正在数据包元信息文件");
+
+        return DatapackChecker.isString("packname", object);
+    }
+    private static FileType interpretFileType(JsonObject object) {
+        getLogger().info("正在尝试推断文件类型");
+        int isProperty = 0;
+        int isWorldConfig = 0;
+        for ( String str : PROPERTY_TOP_LEVEL_KEYS ) { if ( object.has(str) ) isProperty++; }
+        for ( String str : WORLDCONFIG_TOP_LEVEL_KEYS ) { if ( object.has(str) ) isWorldConfig++; }
+
+        if ( isProperty == 0 && isWorldConfig == 0 ) {
+            getLogger().info("推断失败");
+            return FileType.invalid;
         }
-
-        JsonObject defaultConfigObject = defaultConfig.getAsJsonObject();
+        if ( isProperty >= isWorldConfig ) {
+            getLogger().info("推断为蓝图属性文件");
+            return FileType.property;
+        }
+        else {
+            getLogger().info("推断为维度配置文件");
+            return FileType.worldconfig;
+        }
+    }
+    protected static boolean checkDefaultWorldConfigFormat(JsonObject object) {
+        getLogger().info("正在检查默认值配置文件");
 
         return
-                Checker.checkNumberArrListSorted("world_level", defaultConfigObject ) &
-                        Checker.isString("enemy_prefix", defaultConfigObject) &
-                        Checker.isString("ally_prefix", defaultConfigObject) &
-                        Checker.isString("neutral_prefix", defaultConfigObject);
+                DatapackChecker.checkNumberArrListSorted("levels", object ) &
+                        DatapackChecker.isString("enemy_prefix", object) &
+                        DatapackChecker.isString("ally_prefix", object) &
+                        DatapackChecker.isString("neutral_prefix", object);
 
     }
     protected static WorldConfigCheckResult checkWorldConfigFormat(JsonObject object) {
@@ -356,13 +383,23 @@ public class Checker {
         return SableSpawner.LOGGER;
     }
 
+    private enum FileType {
+        property,
+        worldconfig,
+        invalid
+    }
+
     protected record PropertyCheckResult(
             boolean isTopLevelKeysValid,
             boolean isTypeKeysValid,
             boolean isAllyPropertyValid,
             boolean isEnemyPropertyValid,
             boolean isPrefabPropertyValid
-    ) {}
+    ) {
+        protected boolean isAllFalse() {
+            return !( isTopLevelKeysValid || isTypeKeysValid || isAllyPropertyValid || isEnemyPropertyValid || isPrefabPropertyValid );
+        }
+    }
     protected record WorldConfigCheckResult(
             boolean isWorldLevelValid,
             boolean isEnemyPrefixValid,
@@ -399,6 +436,9 @@ public class Checker {
                     isDimensionValid,
                     isSpawnPatternValid
             );
+        }
+        protected boolean isAllFalse() {
+            return !( isWorldLevelValid || isEnemyPrefixValid || isAllyPrefixValid || isNeutralPrefixValid || isDimensionValid || isSpawnPatternValid );
         }
     }
 }

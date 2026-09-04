@@ -1,6 +1,5 @@
 package dev.sable.sablespawner;
 
-import dev.sable.sablespawner.datapack.blueprint.BlueprintManager;
 import dev.sable.sablespawner.player.PlayerManager;
 import dev.sable.sablespawner.spawn.GlobalControl;
 import net.minecraft.server.MinecraftServer;
@@ -10,8 +9,6 @@ import org.slf4j.Logger;
 import com.mojang.logging.LogUtils;
 
 import dev.sable.sablespawner.datapack.DatapackManager;
-import dev.sable.sablespawner.datapack.DatapackReloadListener;
-import net.neoforged.neoforge.event.AddReloadListenerEvent;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.Mod;
@@ -52,12 +49,11 @@ public class SableSpawner {
         NeoForge.EVENT_BUS.register(PLAYER_MANAGER);
         NeoForge.EVENT_BUS.register(GLOBAL_CONTROLLER);
 
+        DATAPACK_MANAGER.loadDatapack();
+        DATAPACK_MANAGER.loadBlueprints();
+
         LOGGER.info("SableSpawner server starting");
     }
 
 
-    @SubscribeEvent
-    public void onAddReloadListener(AddReloadListenerEvent event) {
-        event.addListener( new DatapackReloadListener() );
-    }
 }

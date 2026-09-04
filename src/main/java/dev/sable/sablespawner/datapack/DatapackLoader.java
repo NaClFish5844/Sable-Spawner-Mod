@@ -8,33 +8,37 @@ import dev.sable.sablespawner.datapack.property.sublevel.AbstractSchematicProper
 import dev.sable.sablespawner.datapack.property.sublevel.AllyProperty;
 import dev.sable.sablespawner.datapack.property.sublevel.EnemyProperty;
 import dev.sable.sablespawner.datapack.property.sublevel.PrefabProperty;
-import it.unimi.dsi.fastutil.objects.ObjectList;
-import net.minecraft.resources.ResourceLocation;
-import net.minecraft.server.packs.resources.ResourceManager;
 import net.neoforged.fml.loading.FMLPaths;
 import org.slf4j.Logger;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 
-public class LoadDatapack {
-    private LoadDatapack() {}
+public class DatapackLoader {
+    private DatapackLoader() {}
 
     protected static final Gson GSON = new GsonBuilder()
             .setFieldNamingPolicy(FieldNamingPolicy.LOWER_CASE_WITH_UNDERSCORES)
             .create();
 
-    protected static DefaultConfig parseDefaultWorldConfig( Map<ResourceLocation, JsonElement> datapackFiles ) {
+    protected static DefaultConfig parseDefaultWorldConfig() {
         DefaultConfig defaultConfig = DefaultConfig.ofDefault();
 
-        if ( Checker.checkDefaultWorldConfig(datapackFiles) ) {
-            JsonObject object = datapackFiles
-                    .get( ResourceLocation.fromNamespaceAndPath( "sablespawner", "worldconfig/default" ) )
-                    .getAsJsonObject();
-            defaultConfig.setWorldLevel( Checker.getNoDuplicatedSortedArrList(object.get("world_level")) );
+        Path path = DatapackScanner.getDefaultConfig();
+        if ( path == null ) { return defaultConfig; }
+
+        JsonObject object = loadFile(path);
+        if ( object == null ) { return defaultConfig; }
+
+        if ( DatapackChecker.checkDefaultWorldConfigFormat(object) ) {
+            defaultConfig.setWorldLevel( DatapackChecker.getNoDuplicatedSortedArrList(object.get("level")) );
             defaultConfig.setEnemyPrefix( object.get("enemy_prefix").getAsString() );
             defaultConfig.setAllyPrefix( object.get("ally_prefix").getAsString() );
             defaultConfig.setNeutralPrefix( object.get("neutral_prefix").getAsString() );
@@ -42,11 +46,14 @@ public class LoadDatapack {
 
         return defaultConfig;
     }
-    protected static WorldConfig parseWorldConfig( JsonElement json, DefaultConfig defaultConfig ) {
-        JsonObject object = json.getAsJsonObject();
-        Checker.WorldConfigCheckResult result = Checker.checkWorldConfigFormat(object);
 
+    protected static WorldConfig parseWorldConfig(Path worldConfigPath, DefaultConfig defaultConfig) {
         WorldConfig worldConfig = WorldConfig.ofBasic(defaultConfig);
+
+        JsonObject object = loadFile(worldConfigPath);
+        if ( object == null ) { return worldConfig; }
+
+        DatapackChecker.WorldConfigCheckResult result = DatapackChecker.checkWorldConfigFormat(object);
 
         if ( result.isDimensionValid() ) {
             String dimension = object.get("dimension").getAsString();
@@ -56,61 +63,43 @@ public class LoadDatapack {
         }
         if ( result.isSpawnPatternValid() ) { worldConfig.setSpawnPattern( WorldConfig.Pattern.valueOf( object.get("spawn_pattern").getAsString() ) ); }
 
-        if ( result.isWorldLevelValid() ) { worldConfig.setWorldLevel( Checker.getNoDuplicatedSortedArrList(object.get("world_level")) ); }
+        if ( result.isWorldLevelValid() ) { worldConfig.setWorldLevel( DatapackChecker.getNoDuplicatedSortedArrList(object.get("world_level")) ); }
         if ( result.isEnemyPrefixValid() ) { worldConfig.setEnemyPrefix( object.get("enemy_prefix").getAsString() ); }
         if ( result.isAllyPrefixValid() ) { worldConfig.setAllyPrefix( object.get("ally_prefix").getAsString() ); }
         if ( result.isNeutralPrefixValid() ) { worldConfig.setNeutralPrefix( object.get("neutral_prefix").getAsString() ); }
 
         return worldConfig;
     }
-    // protected record PropertyCheckResult
-    //         boolean isTopLevelKeysValid,
-    //         boolean isTypeKeysValid,
-    //         boolean isAllyPropertyValid,
-    //         boolean isEnemyPropertyValid,
-    //         boolean isPrefabPropertyValid
-    protected static List<AbstractSchematicProperty> parseProperty(JsonElement json ) {
+    protected static List<AbstractSchematicProperty> parseProperty( Path propertyPath, String packName ) {
         List<AbstractSchematicProperty> properties = new ArrayList<>();
 
-        JsonObject object = json.getAsJsonObject();
-        Checker.PropertyCheckResult result = Checker.checkPropertyFormat(object);
+        JsonObject object = loadFile(propertyPath);
+        if ( object == null ) { return properties; }
+
+        DatapackChecker.PropertyCheckResult result = DatapackChecker.checkPropertyFormat(object);
 
         if ( !result.isTopLevelKeysValid() || !result.isTypeKeysValid() ) { return properties; }
 
-        if ( result.isEnemyPropertyValid() ) { parseBlock(properties, object, "enemy_property", EnemyProperty.class); }
-        if ( result.isAllyPropertyValid() ) { parseBlock(properties, object, "ally_property", AllyProperty.class); }
-        if ( result.isPrefabPropertyValid() ) { parseBlock(properties, object, "prefab_property", PrefabProperty.class); }
+        if ( result.isEnemyPropertyValid() ) { parseBlock(packName, properties, object, "enemy_property", EnemyProperty.class); }
+        if ( result.isAllyPropertyValid() ) { parseBlock(packName, properties, object, "ally_property", AllyProperty.class); }
+        if ( result.isPrefabPropertyValid() ) { parseBlock(packName, properties, object, "prefab_property", PrefabProperty.class); }
 
         return properties;
     }
 
-
-    // 一个防呆机制 防止有人把config放进property之类的操作
-    // “开启强力检测”
-    // 直接从Path侧重读压缩包
-    // 以后再说
-    // 会新建一个文件夹 专门放数据 方便版本间迁移
-    // 以后会把数据包尝试迁移到这里？
-    private enum Type {
-        placeholder
-    }
-
-    private static Type interpretType(JsonObject object) {
-        return null;
-    }
     private static JsonObject loadFile(Path path) {
-        // .json -> JsonObject
-        return null;
-    }
-    // 读列表
-    private static ObjectList<Path> readProperties() {
-        return null;
-    }
-    private static ObjectList<Path> readWorldConfigs() {
-        return null;
+        try ( InputStream stream = Files.newInputStream(path) ) {
+            return JsonParser.parseReader(
+                    new InputStreamReader(stream, StandardCharsets.UTF_8)
+            ).getAsJsonObject();
+
+        } catch ( IOException | RuntimeException e ) {
+            getLogger().error("读取数据包文件失败：{}", path, e);
+            return null;
+        }
     }
 
-    private static void parseBlock(List<AbstractSchematicProperty> list, JsonObject object, String blockKey, Class<? extends AbstractSchematicProperty> propertyClass) {
+    private static void parseBlock(String packName, List<AbstractSchematicProperty> destList, JsonObject object, String blockKey, Class<? extends AbstractSchematicProperty> propertyClass) {
         AbstractSchematicProperty prop;
         try {
             prop = GSON.fromJson( object.get(blockKey), propertyClass );
@@ -118,28 +107,32 @@ public class LoadDatapack {
             getLogger().warn("[{}] 反序列化失败，跳过该类型: {}", blockKey, e.toString());
             return;
         }
-        parseBaseProperty(object, prop);
-        list.add(prop);
+        parseBaseProperty(packName, object, prop);
+        destList.add(prop);
     }
-    private static void parseBaseProperty(JsonObject object, AbstractSchematicProperty prop) {
+    private static void parseBaseProperty(String packName, JsonObject object, AbstractSchematicProperty prop) {
+        prop.setPackName(packName);
+
         prop.setSchematicSource(DatapackManager.BlueprintSourceFileLocation.valueOf(object.get("schematic_source").getAsString()));
         prop.setSourceModId(DatapackManager.BlueprintSourceModId.valueOf(object.get("source_mod_id").getAsString()));
 
         String name = object.get("schematic_name").getAsString();
+        String datapackPath = packName + "/data/blueprints/" + name;
         prop.setSchematicName(name);
+
         if ( prop.getSchematicSource() == DatapackManager.BlueprintSourceFileLocation.folder ) {
-            String path = getGameDir().resolve("Sable-Schematics").resolve(name).toString();
+            String path = getSableSchematicApiFolder().resolve(name).toString();
             prop.setSchematicPath(path);
-        } else {
-            prop.setSchematicPath(name);
-            prop.setSchematicResourceLocation(ResourceLocation.fromNamespaceAndPath("sablespawner", "sablespawner/schematics/" + name));
+
+        } else if ( prop.getSchematicSource() == DatapackManager.BlueprintSourceFileLocation.datapack ) {
+            prop.setSchematicPath(datapackPath);
         }
 
         if ( object.has("sublevel_function") ) {
             prop.setSublevelFunction(AbstractSchematicProperty.SublevelFunction.valueOf(object.get("sublevel_function").getAsString()));
         }
-    }
 
+    }
 
     private static Logger getLogger() {
         return SableSpawner.LOGGER;
@@ -147,8 +140,9 @@ public class LoadDatapack {
     private static Path getGameDir() {
         return FMLPaths.GAMEDIR.get();
     }
-    private static ResourceManager getResourceManager() {
-        return SableSpawner.RESOURCE_MANAGER;
+    private static Path getSableSchematicApiFolder() {
+        return getGameDir().resolve("Sable-Schematics");
     }
+
 
 }

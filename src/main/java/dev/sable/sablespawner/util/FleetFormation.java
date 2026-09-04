@@ -1,5 +1,5 @@
 package dev.sable.sablespawner.util;
 
-public class FleetFormation {
+public final class FleetFormation {
 
 }

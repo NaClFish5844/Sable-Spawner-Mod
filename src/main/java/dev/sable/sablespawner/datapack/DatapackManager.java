@@ -1,6 +1,6 @@
 package dev.sable.sablespawner.datapack;
 
-import com.google.gson.JsonElement;
+import dev.rew1nd.sableschematicapi.blueprint.SableBlueprint;
 import dev.sable.sablespawner.SableSpawner;
 import dev.sable.sablespawner.datapack.blueprint.BlueprintEntry;
 import dev.sable.sablespawner.datapack.blueprint.BlueprintProvider;
@@ -8,30 +8,40 @@ import dev.sable.sablespawner.datapack.blueprint.BlueprintKey;
 import dev.sable.sablespawner.datapack.property.config.DefaultConfig;
 import dev.sable.sablespawner.datapack.property.config.WorldConfig;
 import dev.sable.sablespawner.datapack.property.sublevel.*;
-import dev.sable.sablespawner.datapack.blueprint.BlueprintManager;
+import dev.sable.sablespawner.datapack.blueprint.BlueprintBuffer;
 import dev.sable.sablespawner.datapack.query.PropertyQuery;
 import dev.sable.sablespawner.datapack.query.WorldConfigQuery;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
-import it.unimi.dsi.fastutil.objects.ObjectArrayList;
-import it.unimi.dsi.fastutil.objects.ObjectList;
 import lombok.Getter;
 import lombok.Setter;
-import net.minecraft.resources.ResourceLocation;
-import net.minecraft.server.packs.resources.Resource;
 import net.minecraft.server.packs.resources.ResourceManager;
 import net.neoforged.fml.ModList;
 import net.neoforged.fml.loading.FMLPaths;
 import org.slf4j.Logger;
 
+import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.List;
-import java.util.Map;
+import java.util.HashSet;
 import java.util.Set;
+
+import static dev.sable.sablespawner.SableSpawnerConfig.BLUEPRINT_CACHE_MAX_BLOCKS;
 
 
 @Getter @Setter
 public class DatapackManager {
     public static final DatapackManager INSTANCE = new DatapackManager();
+
+    protected enum PackFormat {
+        directory,
+        zip,
+        invalid;
+
+        protected static PackFormat of(Path path) {
+            if ( Files.isDirectory(path) ) { return directory; }
+            if ( Files.isRegularFile(path) && path.toString().endsWith(".zip") ) { return zip; }
+            return invalid;
+        }
+    }
 
     public enum BlueprintSourceFileLocation {
         datapack,
@@ -45,114 +55,145 @@ public class DatapackManager {
         invalid
     }
 
-    public static final BlueprintManager BLUEPRINT_MANAGER = getBlueprintManager();
-    private static final Object2ObjectOpenHashMap<BlueprintKey, BlueprintEntry> BLUEPRINT_BUFFER = getBlueprintBuffer();
-    private static final Object2ObjectOpenHashMap<PropertyKey, AbstractSchematicProperty> PROPERTY_MANAGER = new Object2ObjectOpenHashMap<>();
-    private static final Object2ObjectOpenHashMap<String, DefaultConfig> WORLDCONFIG_MANAGER = new Object2ObjectOpenHashMap<>();
+    private final Object2ObjectOpenHashMap<BlueprintKey, BlueprintEntry> BLUEPRINT_BUFFER = getBlueprintBuffer().getBuffer();
+    private final Object2ObjectOpenHashMap<PropertyKey, AbstractSchematicProperty> PROPERTY_MANAGER = new Object2ObjectOpenHashMap<>();
+    private final Object2ObjectOpenHashMap<String, DefaultConfig> WORLDCONFIG_MANAGER = new Object2ObjectOpenHashMap<>();
 
-    public static void loadDatapack( Map<ResourceLocation, JsonElement> datapackFiles ) {
+    private final Object2ObjectOpenHashMap<String, PackFormat> PackFormatRegistry = new Object2ObjectOpenHashMap<>();
+
+    public void loadDatapack() {
         PROPERTY_MANAGER.clear();
         WORLDCONFIG_MANAGER.clear();
 
-        DefaultConfig defaultConfig = LoadDatapack.parseDefaultWorldConfig(datapackFiles);
+        DefaultConfig defaultConfig = DatapackLoader.parseDefaultWorldConfig();
         WORLDCONFIG_MANAGER.put("default", defaultConfig);
 
-        for ( Map.Entry<ResourceLocation, JsonElement> fileEntry : datapackFiles.entrySet() ) {
-            String key = fileEntry.getKey().toString();
-            JsonElement jsonElement = fileEntry.getValue();
+        Set<Path> datapackDirs = DatapackScanner.scanDatapacks();
+        if ( datapackDirs.isEmpty() ) {
+            getLogger().info("未检测到数据包");
+            return;
+        }
 
-            getLogger().info("正在加载文件：{}", key);
+        if ( datapackDirs.size()<=10 ) { getLogger().info( "发现 {} 个数据包：{}", datapackDirs.size(), datapackDirs ); }
+        else { getLogger().info( "发现 {} 个数据包", datapackDirs.size()); }
 
-            if ( key.startsWith("sablespawner:worldconfig") ) {
-                if ( key.equals("sablespawner:worldconfig/default") ) { continue; }
-                WorldConfig worldConfig = LoadDatapack.parseWorldConfig( jsonElement, defaultConfig );
+        for ( Path datapack : datapackDirs ) {
+            String packName = datapack.getFileName().toString();
+            PackFormatRegistry.put(packName, PackFormat.of(datapack));
 
-                if ( worldConfig == null ) {
-                    getLogger().warn("文件加载失败：{}", key);
-                    continue;
-                }
+            Path meta = DatapackScanner.getMetaJsonOfPack(datapack);
+            if ( meta == null ) { return; }
 
-                WORLDCONFIG_MANAGER.put( worldConfig.getDimension(), worldConfig );
-            }
-            else if ( key.startsWith("sablespawner:properties") ) {
-                List<AbstractSchematicProperty> properties = LoadDatapack.parseProperty( jsonElement );
-                if ( properties.isEmpty() ) {
-                    getLogger().warn("文件加载失败：{}", key);
-                    continue;
-                }
-                for ( AbstractSchematicProperty property : properties ) {
-                    PropertyKey propertyKey = null;
-                    if ( property instanceof AllyProperty ) {
-                        propertyKey = new PropertyKey(key, AbstractSchematicProperty.SublevelType.ally);
-                    }
-                    if ( property instanceof EnemyProperty ) {
-                        propertyKey = new PropertyKey(key, AbstractSchematicProperty.SublevelType.enemy);
-                    }
-                    if ( property instanceof PrefabProperty ) {
-                        propertyKey = new PropertyKey(key, AbstractSchematicProperty.SublevelType.prefab);
-                    }
-                    PROPERTY_MANAGER.put( propertyKey, property );
+            Set<Path> properties = DatapackScanner.scanPropertyOfPack(datapack);
+            Set<Path> worldConfigs = DatapackScanner.scanWorldConfigOfPack(datapack);
+
+            for ( Path property : properties ) {
+                String key = packName + "/" + stripExtension( property.getFileName().toString() );
+
+                for ( AbstractSchematicProperty p : DatapackLoader.parseProperty(property, packName) ) {
+                    PROPERTY_MANAGER.put( PropertyKey.of(key, p.getSublevelType()), p );
                 }
             }
-
-            else { getLogger().warn("发现未知文件：{}", key); }
+            for ( Path config : worldConfigs ) {
+                WorldConfig worldConfig = DatapackLoader.parseWorldConfig(config, defaultConfig);
+                if ( worldConfig != null ) { WORLDCONFIG_MANAGER.put(worldConfig.getDimension(), worldConfig); }
+            }
 
         }
+
     }
+    public void loadBlueprints() {
+        BLUEPRINT_BUFFER.clear(); //更新考虑做成增量式的？
 
-    public static void loadBlueprints() {
-        BLUEPRINT_BUFFER.clear();
-        //更新考虑做成增量式的？
+        Set<Path> datapackDirs = DatapackScanner.scanDatapacks();
+        if ( datapackDirs.isEmpty() ) { return; }
+        Set<Path> blueprints = new HashSet<>();
 
-        // 筛选进缓存的
-        ObjectList<BlueprintKey> fromDatapack = new ObjectArrayList<>();
-        ObjectList<BlueprintKey> fromFolder = new ObjectArrayList<>();
+        for ( Path datapack : datapackDirs ) {
+            blueprints.addAll(
+                    DatapackScanner.scanBlueprintOfPack(datapack)
+            );
+        }
 
-        Map<ResourceLocation, Resource> datapackBlueprintFiles =
-                getResourceManager().listResources(
-                        "sablespawner/schematics",
-                        f -> f.toString().endsWith(".nbt")
-                );
-        ObjectList<Path> folderBlueprintFiles = new ObjectArrayList<>();
-
-        // 还需要从PROPERTY_MANAGER里查有效的prop
-        // 以节省时间
         for ( BlueprintSourceModId modId : BlueprintSourceModId.values() ) {
             if ( modId == BlueprintSourceModId.invalid || modId == BlueprintSourceModId.auto ) { continue; }
+            if ( !getModList().isLoaded( modId.toString() ) ) { continue; }
 
-            Set<Path> paths = BlueprintProvider.readFolderBlueprints( modId );
-            if ( paths == null ) { continue; }
+            Set<Path> bp = BlueprintProvider.scanFolderBlueprints(modId);
 
-            folderBlueprintFiles.addAll(paths);
+            if ( !bp.isEmpty() ) {
+                getLogger().info("发现 [{}] 的蓝图", modId);
+                blueprints.addAll(bp);
+            }
+        }
+
+        for ( AbstractSchematicProperty property : PROPERTY_MANAGER.values() ) {
+            int maxBlocks = BLUEPRINT_CACHE_MAX_BLOCKS.getAsInt();
+
+            String packName = property.getPackName();
+            String bp = property.getSchematicPath();
+            BlueprintSourceModId sourceModId = property.getSourceModId();
+
+            Object blueprintObject = null;
+            BlueprintKey blueprintKey;
+            BlueprintEntry blueprintEntry;
+
+            switch ( PackFormatRegistry.get(packName) ) {
+                case directory -> {
+                    // 尝试加载为对应的obj (BlueprintProvider.getBlueprintObject)
+                }
+                case zip -> {
+                    // 打开zip
+                    // 尝试加载为对应的obj (BlueprintProvider.getBlueprintObject)
+                }
+                default -> {
+                    continue;
+                }
+            }
+            if ( blueprintObject == null ) { continue; }
+
+            switch ( sourceModId ) {
+                case sable_schematic_api -> {
+                    if ( blueprintObject instanceof SableBlueprint sableBp ) {
+                        // 检测蓝图大小，决定是否进入缓存
+                    }
+                }
+                default -> {
+                    if ( blueprintObject instanceof Path ) { blueprintEntry = new BlueprintEntry( blueprintObject ); }
+                }
+            }
+
+
+
+            // 按prop从set里pop蓝图 并且加入缓存器
         }
 
 
-        if ( getModList().isLoaded("sable_schematic_api") ) {
-            Set<Path> folderBlueprints =  BlueprintProvider.readFolderBlueprints( DatapackManager.BlueprintSourceModId.sable_schematic_api );
 
-        }
 
+        // 把剩下的蓝图归拢 自动生成bpK
 
     }
 
-    public static PropertyQuery propertyQuery() {
+    public PropertyQuery propertyQuery() {
         return new PropertyQuery(PROPERTY_MANAGER);
     }
-    public static WorldConfigQuery worldConfigQuery() {
+    public WorldConfigQuery worldConfigQuery() {
         return new WorldConfigQuery(WORLDCONFIG_MANAGER);
     }
 
+    private static String stripExtension(String fileName) {
+        int dot = fileName.lastIndexOf('.');
+        return dot > 0 ? fileName.substring(0, dot) : fileName;
+    }
     private static Logger getLogger() {
         return SableSpawner.LOGGER;
-    }
-    private static BlueprintManager getBlueprintManager() {
-        return BlueprintManager.INSTANCE;
     }
     private static ResourceManager getResourceManager() {
         return SableSpawner.RESOURCE_MANAGER;
     }
-    private static Object2ObjectOpenHashMap<BlueprintKey, BlueprintEntry> getBlueprintBuffer() {
-        return BlueprintManager.getBuffer();
+    private static BlueprintBuffer getBlueprintBuffer() {
+        return BlueprintBuffer.INSTANCE;
     }
     private static ModList getModList() {
         return ModList.get();

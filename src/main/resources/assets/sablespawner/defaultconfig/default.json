@@ -1,0 +1,13 @@
+{
+  "levels": [
+        0, 
+        100, 
+        200, 
+        500, 
+        1000, 
+        114514
+    ],
+    "enemy_prefix": "[ENEMY] ",
+    "ally_prefix": "[ALLY] ",
+    "neutral_prefix": "[NEUTRAL] "
+}
