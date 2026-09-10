@@ -1,7 +1,6 @@
 package dev.sable.sablespawner.player;
 
 import dev.sable.sablespawner.SableSpawner;
-import dev.sable.sablespawner.datapack.property.config.WorldConfig;
 import lombok.Getter;
 import lombok.Setter;
 import net.minecraft.server.level.ServerPlayer;
@@ -58,23 +57,7 @@ public class PlayerStatus {
         if ( score<=0 ) { return; }
         setScore( getScore() - score );
     }
-    public int getScoreLevel() {
-        int result = 1;
-        if ( getWorldConfig().getWorldLevel().isEmpty() ) { return result; }
-        for (int i = 0; i < getWorldConfig().getWorldLevel().size(); i++) {
-            if (getScore() >= getWorldConfig().getWorldLevel().get(i)) {
-                result = i + 1;
-            }
-        }
-        return result;
-    }
-    public void setScoreLevel( int level ) {
-        if ( level > getWorldConfig().getWorldLevel().size() || level < 1 ) { return; }
-        setScore( getWorldConfig().getWorldLevel().get( level - 1) );
-    }
 
-
-    private WorldConfig getWorldConfig() { return SableSpawner.DATAPACK_MANAGER.getWorldConfig(); }
     private long getGameTime() { return SableSpawner.SERVER.overworld().getGameTime(); }
 
 }

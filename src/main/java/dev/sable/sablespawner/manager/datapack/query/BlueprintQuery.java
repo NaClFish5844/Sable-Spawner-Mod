@@ -1,8 +1,9 @@
-package dev.sable.sablespawner.datapack.query;
+package dev.sable.sablespawner.manager.datapack.query;
 
-import dev.sable.sablespawner.datapack.DatapackManager;
-import dev.sable.sablespawner.datapack.blueprint.BlueprintEntry;
-import dev.sable.sablespawner.datapack.blueprint.BlueprintKey;
+import dev.sable.sablespawner.manager.datapack.DatapackManager;
+import dev.sable.sablespawner.manager.blueprint.BlueprintEntry;
+import dev.sable.sablespawner.manager.blueprint.BlueprintKey;
+import dev.sable.sablespawner.manager.datapack.property.sublevel.AbstractSchematicProperty;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import it.unimi.dsi.fastutil.objects.ObjectList;
@@ -12,8 +13,6 @@ import java.util.Objects;
 import java.util.function.Predicate;
 
 public class BlueprintQuery {
-    // template
-    // will be rewritten
 
     private final Object2ObjectOpenHashMap<BlueprintKey, BlueprintEntry> source;
     private Predicate<BlueprintKey> keyPredicate = k -> true;
@@ -40,6 +39,14 @@ public class BlueprintQuery {
     }
     public BlueprintQuery ofSourceModId(String modId) {
         keyPredicate = keyPredicate.and(k -> Objects.equals(k.sourceMod().toString(), modId) );
+        return this;
+    }
+    public BlueprintQuery ofFileHash(String hash) {
+        keyPredicate = keyPredicate.and(k -> k.fileHash().equals(hash) );
+        return this;
+    }
+    public BlueprintQuery ofProperty(AbstractSchematicProperty property) {
+        keyPredicate = keyPredicate.and(k -> Objects.equals( k.fileHash(), property.getSchematicHash()));
         return this;
     }
 

@@ -1,4 +1,4 @@
-package dev.sable.sablespawner.datapack;
+package dev.sable.sablespawner.manager.datapack;
 
 import com.google.gson.Gson;
 import com.google.gson.JsonArray;
@@ -6,11 +6,11 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonObject;
 import com.google.gson.annotations.SerializedName;
 import dev.sable.sablespawner.SableSpawner;
-import dev.sable.sablespawner.datapack.property.config.WorldConfig;
-import dev.sable.sablespawner.datapack.property.sublevel.AbstractSchematicProperty;
-import dev.sable.sablespawner.datapack.property.sublevel.AllyProperty;
-import dev.sable.sablespawner.datapack.property.sublevel.EnemyProperty;
-import dev.sable.sablespawner.datapack.property.sublevel.PrefabProperty;
+import dev.sable.sablespawner.manager.datapack.property.config.WorldConfig;
+import dev.sable.sablespawner.manager.datapack.property.sublevel.AbstractSchematicProperty;
+import dev.sable.sablespawner.manager.datapack.property.sublevel.AllyProperty;
+import dev.sable.sablespawner.manager.datapack.property.sublevel.EnemyProperty;
+import dev.sable.sablespawner.manager.datapack.property.sublevel.PrefabProperty;
 import net.minecraft.resources.ResourceLocation;
 import org.slf4j.Logger;
 

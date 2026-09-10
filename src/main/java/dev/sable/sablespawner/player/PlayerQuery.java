@@ -29,10 +29,6 @@ public class PlayerQuery {
         predicate = predicate.and(s -> !s.isInProtection());
         return this;
     }
-    public PlayerQuery ofScoreLevel(int level) {
-        predicate = predicate.and(s -> s.getScoreLevel() == level);
-        return this;
-    }
 
     public Object2ObjectOpenHashMap<UUID, PlayerStatus> collect() {
         Object2ObjectOpenHashMap<UUID, PlayerStatus> result = new Object2ObjectOpenHashMap<>();

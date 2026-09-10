@@ -44,6 +44,10 @@ public final class FileHashUtil {
             return null;
         }
     }
+    public static String getFileMD5(InputStream stream) {
+        if ( stream == null ) { return null; }
+        return hashStream(stream);
+    }
 
     private static String hashStream(InputStream stream) {
         try {

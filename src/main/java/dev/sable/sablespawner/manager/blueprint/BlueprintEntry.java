@@ -1,4 +1,4 @@
-package dev.sable.sablespawner.datapack.blueprint;
+package dev.sable.sablespawner.manager.blueprint;
 
 import javax.annotation.Nullable;
 import java.nio.file.Path;

@@ -6,9 +6,9 @@ import dev.ryanhcode.sable.api.sublevel.SubLevelContainer;
 import dev.ryanhcode.sable.sublevel.ServerSubLevel;
 import dev.sable.sablespawner.SableSpawner;
 import dev.sable.sablespawner.SableSpawnerConfig;
-import dev.sable.sablespawner.datapack.DatapackManager;
-import dev.sable.sablespawner.datapack.property.config.WorldConfig;
-import dev.sable.sablespawner.datapack.property.sublevel.EnemyProperty;
+import dev.sable.sablespawner.manager.datapack.DatapackManager;
+import dev.sable.sablespawner.manager.datapack.property.config.WorldConfig;
+import dev.sable.sablespawner.manager.datapack.property.sublevel.EnemyProperty;
 import dev.sable.sablespawner.player.PlayerManager;
 import dev.sable.sablespawner.player.PlayerStatus;
 import dev.sable.sablespawner.spawn.session.EnemySubLevelTracker;
@@ -58,7 +58,6 @@ public class EnemyControl {
         executeAppend();
         executeRemove();
     }
-
     public void callPerTick() { // only isSpawnerActive==true
         for ( EnemySubLevelEntry entry : TRACKER.getEntries().values() ) {
             if ( entry.isDestroyed() ) { onDestroyed( entry ); }
@@ -66,7 +65,6 @@ public class EnemyControl {
         }
         executeRemove();
     }
-
     public void callPer5Tick() { // only isSpawnerActive==true
         SPAWN_QUEUE.updateQueue();
         Object2ObjectOpenHashMap<UUID, PlayerStatus> needNewEnemyPlayers = getPlayerManager().query()
@@ -258,7 +256,12 @@ public class EnemyControl {
 
     private long getGameTime() { return SableSpawner.SERVER.overworld().getGameTime(); }
     private DatapackManager getDatapackManager() { return SableSpawner.DATAPACK_MANAGER; }
-    private WorldConfig getWorldConfig() { return SableSpawner.DATAPACK_MANAGER.getWorldConfig(); }
+    private WorldConfig getWorldConfig() {
+        return SableSpawner.DATAPACK_MANAGER
+                .worldConfigQuery()
+                .ofDimension(LEVEL)
+                .collect();
+    }
     private PlayerManager getPlayerManager() { return SableSpawner.PLAYER_MANAGER; }
 
 }

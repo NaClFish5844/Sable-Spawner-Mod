@@ -1,8 +1,11 @@
-package dev.sable.sablespawner.datapack.blueprint;
+package dev.sable.sablespawner.manager.blueprint;
 
 
-import dev.sable.sablespawner.datapack.query.BlueprintQuery;
+import dev.sable.sablespawner.manager.datapack.property.sublevel.AbstractSchematicProperty;
+import dev.sable.sablespawner.manager.datapack.query.BlueprintQuery;
+import it.unimi.dsi.fastutil.Pair;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
+import org.jetbrains.annotations.Nullable;
 
 public class BlueprintBuffer {
     public static final BlueprintBuffer INSTANCE = new BlueprintBuffer();
@@ -32,6 +35,14 @@ public class BlueprintBuffer {
     public void clearBuffer() {
         BUFFER.clear();
     }
+
+    @Nullable public Pair<String, Object> getBlueprintObject(BlueprintEntry blueprintEntry) {
+        // 根据entry直接确定蓝图
+    }
+    @Nullable public Pair<String, Object> getBlueprintObject(AbstractSchematicProperty property) {
+        // 根据hash直接确定蓝图
+    }
+
 
 
     public BlueprintQuery query() {

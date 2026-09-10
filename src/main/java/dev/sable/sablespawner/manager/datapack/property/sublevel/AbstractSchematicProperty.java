@@ -1,6 +1,6 @@
-package dev.sable.sablespawner.datapack.property.sublevel;
+package dev.sable.sablespawner.manager.datapack.property.sublevel;
 
-import dev.sable.sablespawner.datapack.DatapackManager;
+import dev.sable.sablespawner.manager.datapack.DatapackManager;
 import lombok.Getter;
 import lombok.Setter;
 
@@ -22,23 +22,24 @@ public abstract class AbstractSchematicProperty {
         invalid
     }
 
-    @Nullable private String packName;
+    private String packName;
 
     private DatapackManager.BlueprintSourceFileLocation schematicSource;
     private DatapackManager.BlueprintSourceModId sourceModId;
 
-    @Nullable private String schematicName;
-    @Nullable private String schematicPath;
+    private String schematicName;
+    private String schematicPath;
+    @Nullable private String schematicHash = null;
 
     private SublevelType sublevelType;
     private SublevelFunction sublevelFunction;
 
     protected AbstractSchematicProperty(
-            @Nullable String packName,
+            String packName,
             DatapackManager.BlueprintSourceFileLocation schematicSource,
             DatapackManager.BlueprintSourceModId sourceModId,
-            @Nullable String schematicName,
-            @Nullable String schematicPath,
+            String schematicName,
+            String schematicPath,
             SublevelType sublevelType,
             SublevelFunction sublevelFunction
     ) {
@@ -56,7 +57,7 @@ public abstract class AbstractSchematicProperty {
                 null,
                 DatapackManager.BlueprintSourceFileLocation.invalid,
                 DatapackManager.BlueprintSourceModId.auto,
-                null, null,
+                "unknown", null,
                 SublevelType.invalid,
                 SublevelFunction.invalid
         );

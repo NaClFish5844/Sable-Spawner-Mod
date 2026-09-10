@@ -1,4 +1,4 @@
-package dev.sable.sablespawner.datapack.property.config;
+package dev.sable.sablespawner.manager.datapack.property.config;
 
 import lombok.Getter;
 import lombok.Setter;

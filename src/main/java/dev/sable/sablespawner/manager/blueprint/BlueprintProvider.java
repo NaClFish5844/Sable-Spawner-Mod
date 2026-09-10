@@ -1,8 +1,8 @@
-package dev.sable.sablespawner.datapack.blueprint;
+package dev.sable.sablespawner.manager.blueprint;
 
 import dev.rew1nd.sableschematicapi.blueprint.SableBlueprint;
 import dev.sable.sablespawner.SableSpawner;
-import dev.sable.sablespawner.datapack.DatapackManager;
+import dev.sable.sablespawner.manager.datapack.DatapackManager;
 import it.unimi.dsi.fastutil.Pair;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.NbtAccounter;
@@ -11,7 +11,6 @@ import net.neoforged.fml.ModList;
 import net.neoforged.fml.loading.FMLPaths;
 import org.slf4j.Logger;
 
-import javax.annotation.Nullable;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.file.Files;
@@ -49,7 +48,7 @@ public class BlueprintProvider {
         return files;
     }
 
-    @Nullable public static Pair<String, Object> getBlueprintObject(Path blueprintPath, DatapackManager.BlueprintSourceModId modId) {
+    public static Pair<String, Object> getBlueprintObjectOfRef(Path blueprintPath, DatapackManager.BlueprintSourceModId modId) {
         DatapackManager.BlueprintSourceModId mid;
         mid = modId;
 
@@ -65,15 +64,15 @@ public class BlueprintProvider {
 
                 } catch (IOException e) {
                     getLogger().error("蓝图加载失败");
-                    return null;
+                    return Pair.of("Path", null);
                 }
             }
             default -> {
-                return null;
+                return Pair.of("Path", null);
             }
         }
     }
-    @Nullable public static Pair<String, Object> getBlueprintObject(InputStream blueprintStream, DatapackManager.BlueprintSourceModId modId) {
+    public static Pair<String, Object> getBlueprintObjectOfRef(InputStream blueprintStream, DatapackManager.BlueprintSourceModId modId) {
         DatapackManager.BlueprintSourceModId mid;
         mid = modId;
 
@@ -89,21 +88,20 @@ public class BlueprintProvider {
 
                 } catch (IOException e) {
                     getLogger().error("蓝图加载失败");
-                    return null;
+                    return Pair.of("Path", null);
                 }
-
             }
             default -> {
-                return null;
+                return Pair.of("Path", null);
             }
         }
     }
 
     // 这是未填写源mod的蓝图的自动解析 预计非常复杂 以后再说
-    private static DatapackManager.BlueprintSourceModId interpretBlueprintSource(Path blueprintPath) {
+    public static DatapackManager.BlueprintSourceModId interpretBlueprintSource(Path blueprintPath) {
         return DatapackManager.BlueprintSourceModId.invalid;
     }
-    private static DatapackManager.BlueprintSourceModId interpretBlueprintSource(InputStream blueprintStream) {
+    public static DatapackManager.BlueprintSourceModId interpretBlueprintSource(InputStream blueprintStream) {
         return DatapackManager.BlueprintSourceModId.invalid;
     }
 

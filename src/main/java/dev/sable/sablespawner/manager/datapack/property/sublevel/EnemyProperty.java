@@ -1,4 +1,4 @@
-package dev.sable.sablespawner.datapack.property.sublevel;
+package dev.sable.sablespawner.manager.datapack.property.sublevel;
 
 import com.google.gson.annotations.SerializedName;
 import lombok.Getter;

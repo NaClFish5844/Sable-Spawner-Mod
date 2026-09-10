@@ -3,7 +3,7 @@ package dev.sable.sablespawner.spawn.session.entry;
 import dev.rew1nd.sableschematicapi.blueprint.SableBlueprint;
 import dev.rew1nd.sableschematicapi.survival.BlueprintPlacementPlan;
 import dev.ryanhcode.sable.companion.math.Pose3d;
-import dev.sable.sablespawner.datapack.property.sublevel.EnemyProperty;
+import dev.sable.sablespawner.manager.datapack.property.sublevel.EnemyProperty;
 import dev.sable.sablespawner.player.PlayerStatus;
 import dev.sable.sablespawner.spawn.Spawner;
 import dev.sable.sablespawner.util.SpawnPatternUtil;

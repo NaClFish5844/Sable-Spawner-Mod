@@ -1,13 +1,13 @@
-package dev.sable.sablespawner.datapack;
+package dev.sable.sablespawner.manager.datapack;
 
 import com.google.gson.*;
 import dev.sable.sablespawner.SableSpawner;
-import dev.sable.sablespawner.datapack.property.config.DefaultConfig;
-import dev.sable.sablespawner.datapack.property.config.WorldConfig;
-import dev.sable.sablespawner.datapack.property.sublevel.AbstractSchematicProperty;
-import dev.sable.sablespawner.datapack.property.sublevel.AllyProperty;
-import dev.sable.sablespawner.datapack.property.sublevel.EnemyProperty;
-import dev.sable.sablespawner.datapack.property.sublevel.PrefabProperty;
+import dev.sable.sablespawner.manager.datapack.property.config.DefaultConfig;
+import dev.sable.sablespawner.manager.datapack.property.config.WorldConfig;
+import dev.sable.sablespawner.manager.datapack.property.sublevel.AbstractSchematicProperty;
+import dev.sable.sablespawner.manager.datapack.property.sublevel.AllyProperty;
+import dev.sable.sablespawner.manager.datapack.property.sublevel.EnemyProperty;
+import dev.sable.sablespawner.manager.datapack.property.sublevel.PrefabProperty;
 import net.neoforged.fml.loading.FMLPaths;
 import org.slf4j.Logger;
 
@@ -17,8 +17,7 @@ import java.io.InputStreamReader;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.List;
+import java.util.*;
 
 
 public class DatapackLoader {
@@ -45,6 +44,28 @@ public class DatapackLoader {
         }
 
         return defaultConfig;
+    }
+
+    public static Set<DatapackSource> loadDatapackSources() {
+        Set<DatapackSource> datapacks = new HashSet<>();
+
+        for ( Path root : DatapackScanner.scanDatapackRoots() ) {
+            if ( root.toString().endsWith(".zip") ) {
+                for ( String validRoot : DatapackScanner.scanRelativeValidRoot(root) ) {
+                    PackMeta packMeta = DatapackScanner.readPackMeta(root, validRoot);
+                    if ( packMeta == null ) { continue; }
+
+                    datapacks.add( DatapackSource.ofZip(root, validRoot.isEmpty() ? null : validRoot, packMeta) );
+                }
+                continue;
+            }
+
+            PackMeta packMeta = DatapackScanner.readPackMeta(root, null);
+            if ( packMeta == null ) { continue; }
+
+            datapacks.add( DatapackSource.ofDir(root, packMeta) );
+        }
+        return datapacks;
     }
 
     protected static WorldConfig parseWorldConfig(Path worldConfigPath, DefaultConfig defaultConfig) {

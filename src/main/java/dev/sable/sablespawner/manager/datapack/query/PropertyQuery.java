@@ -1,8 +1,8 @@
-package dev.sable.sablespawner.datapack.query;
+package dev.sable.sablespawner.manager.datapack.query;
 
-import dev.sable.sablespawner.datapack.property.sublevel.AbstractSchematicProperty;
-import dev.sable.sablespawner.datapack.property.sublevel.EnemyProperty;
-import dev.sable.sablespawner.datapack.property.sublevel.PropertyKey;
+import dev.sable.sablespawner.manager.datapack.property.sublevel.AbstractSchematicProperty;
+import dev.sable.sablespawner.manager.datapack.property.sublevel.EnemyProperty;
+import dev.sable.sablespawner.manager.datapack.property.sublevel.PropertyKey;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import it.unimi.dsi.fastutil.objects.ObjectList;
@@ -105,12 +105,6 @@ public class PropertyQuery {
         return candidates.getLast();
     }
 
-    private static long weightOf(AbstractSchematicProperty prop) {
-        if (prop instanceof EnemyProperty enemy) { return enemy.getWeight(); }
-        return 0;
-    }
-
-
     public ObjectList<PropertyKey> collectKeys() {
         ObjectList<PropertyKey> result = new ObjectArrayList<>();
 
@@ -134,5 +128,10 @@ public class PropertyQuery {
         return result;
     }
     @Nullable public AbstractSchematicProperty get(PropertyKey key) { return source.get(key); }
+
+    private static long weightOf(AbstractSchematicProperty prop) {
+        if (prop instanceof EnemyProperty enemy) { return enemy.getWeight(); }
+        return 0;
+    }
 
 }

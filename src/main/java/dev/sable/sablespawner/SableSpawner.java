@@ -8,7 +8,7 @@ import org.slf4j.Logger;
 
 import com.mojang.logging.LogUtils;
 
-import dev.sable.sablespawner.datapack.DatapackManager;
+import dev.sable.sablespawner.manager.datapack.DatapackManager;
 import net.neoforged.bus.api.IEventBus;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.fml.common.Mod;
@@ -49,8 +49,8 @@ public class SableSpawner {
         NeoForge.EVENT_BUS.register(PLAYER_MANAGER);
         NeoForge.EVENT_BUS.register(GLOBAL_CONTROLLER);
 
-        DATAPACK_MANAGER.loadDatapack();
-        DATAPACK_MANAGER.loadBlueprints();
+        DATAPACK_MANAGER.reloadDatapack();
+        DATAPACK_MANAGER.reloadBlueprint();
 
         LOGGER.info("SableSpawner server starting");
     }

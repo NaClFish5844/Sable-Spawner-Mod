@@ -1,9 +1,10 @@
 package dev.sable.sablespawner.spawn.session;
 
 import dev.sable.sablespawner.SableSpawner;
-import dev.sable.sablespawner.datapack.DatapackManager;
-import dev.sable.sablespawner.datapack.property.sublevel.AbstractSchematicProperty;
-import dev.sable.sablespawner.datapack.property.sublevel.EnemyProperty;
+import dev.sable.sablespawner.manager.datapack.DatapackManager;
+import dev.sable.sablespawner.manager.datapack.property.config.WorldConfig;
+import dev.sable.sablespawner.manager.datapack.property.sublevel.AbstractSchematicProperty;
+import dev.sable.sablespawner.manager.datapack.property.sublevel.EnemyProperty;
 import dev.sable.sablespawner.player.PlayerManager;
 import dev.sable.sablespawner.player.PlayerStatus;
 import dev.sable.sablespawner.spawn.session.entry.SpawnTicket;
@@ -41,7 +42,6 @@ public class SpawnQueue {
         }
     }
 
-
     private void push(UUID playerUUID) {
         EnemyProperty property = selectEnemy(playerUUID);
         if ( property == null ) { return; }
@@ -57,10 +57,14 @@ public class SpawnQueue {
     }
 
     @Nullable private EnemyProperty selectEnemy(UUID playerUUID) {
-        Object2ObjectOpenHashMap<UUID, PlayerStatus> hashMap = getPlayerManager().query().ofUUID(playerUUID).collect();
-        if ( hashMap.isEmpty() ) { return null; }
+        Object2ObjectOpenHashMap<UUID, PlayerStatus> player =
+                getPlayerManager().query()
+                        .ofUUID(playerUUID)
+                        .collect();
+        if ( player.isEmpty() ) { return null; }
 
-        int playerScoreLevel = hashMap.values().iterator().next().getScoreLevel();
+        int playerScore = player.values().iterator().next().getScore();
+        int playerScoreLevel = getScoreLevel(playerScore);
 
         AbstractSchematicProperty picked = getDatapackManager().propertyQuery()
                 .isEnemy()
@@ -71,6 +75,14 @@ public class SpawnQueue {
         return picked instanceof EnemyProperty enemy ? enemy : null;
     }
 
+    private int getScoreLevel(int score) {
+        WorldConfig worldConfig = getDatapackManager().worldConfigQuery()
+                .ofDimension(LEVEL)
+                .collect();
+
+        if ( worldConfig == null ) { return -1; }
+        return worldConfig.getScoreLevel(score);
+    }
     private long getGameTime() { return SableSpawner.SERVER.overworld().getGameTime(); }
     private DatapackManager getDatapackManager() { return SableSpawner.DATAPACK_MANAGER; }
     private PlayerManager getPlayerManager() { return SableSpawner.PLAYER_MANAGER; }
