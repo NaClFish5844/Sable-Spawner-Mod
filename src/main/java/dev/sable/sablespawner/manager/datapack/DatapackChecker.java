@@ -17,8 +17,8 @@ import org.slf4j.Logger;
 import java.lang.reflect.Field;
 import java.util.*;
 
-public class DatapackChecker {
-    private static final Gson GSON = DatapackLoader.GSON;
+public final class DatapackChecker {
+    private static final Gson GSON = DatapackLoader.getGSON();
 
     private static final Set<String> PROPERTY_TOP_LEVEL_KEYS = Set.of(
             "schematic_source", "source_mod_id", "schematic_name",
@@ -31,12 +31,12 @@ public class DatapackChecker {
             "spawn_pattern"
     );
 
-    protected static boolean checkMetaFormat(JsonObject object) {
+    public static boolean checkMetaFormat(JsonObject object) {
         getLogger().info("正在数据包元信息文件");
 
         return DatapackChecker.isString("packname", object);
     }
-    private static FileType interpretFileType(JsonObject object) {
+    public static FileType interpretFileType(JsonObject object) {
         getLogger().info("正在尝试推断文件类型");
         int isProperty = 0;
         int isWorldConfig = 0;
@@ -56,7 +56,7 @@ public class DatapackChecker {
             return FileType.worldconfig;
         }
     }
-    protected static boolean checkDefaultWorldConfigFormat(JsonObject object) {
+    public static boolean checkDefaultWorldConfigFormat(JsonObject object) {
         getLogger().info("正在检查默认值配置文件");
 
         return
@@ -66,7 +66,7 @@ public class DatapackChecker {
                         DatapackChecker.isString("neutral_prefix", object);
 
     }
-    protected static WorldConfigCheckResult checkWorldConfigFormat(JsonObject object) {
+    public static WorldConfigCheckResult checkWorldConfigFormat(JsonObject object) {
         getLogger().info("正在检查维度配置文件格式");
 
         WorldConfigCheckResult nullableFormat = checkWorldConfigNullableFormat(object);
@@ -82,7 +82,7 @@ public class DatapackChecker {
                 isSpawnPatternValid
         );
     }
-    protected static WorldConfigCheckResult checkWorldConfigNullableFormat(JsonObject object) {
+    public static WorldConfigCheckResult checkWorldConfigNullableFormat(JsonObject object) {
 
         boolean isWorldLevelValid = true;
         boolean isEnemyPrefixValid = true;
@@ -110,7 +110,7 @@ public class DatapackChecker {
         );
 
     }
-    protected static PropertyCheckResult checkPropertyFormat(JsonObject object) {
+    public static PropertyCheckResult checkPropertyFormat(JsonObject object) {
         getLogger().info("正在检查蓝图属性文件格式");
 
         boolean isTopLevelKeysValid =
@@ -156,7 +156,7 @@ public class DatapackChecker {
                 isPrefabPropertyValid
         );
     }
-    protected static boolean checkPropertyBlock( String key, JsonElement element, Class<? extends AbstractSchematicProperty> propertyClass) {
+    public static boolean checkPropertyBlock( String key, JsonElement element, Class<? extends AbstractSchematicProperty> propertyClass) {
         Set<String> propertyKeys = propertyKeyNames(propertyClass);
 
         if ( element == null ) { return false; }
@@ -174,7 +174,7 @@ public class DatapackChecker {
         return true;
     }
 
-    protected static boolean checkNumberInRange( String key, JsonObject root, Number min, Number max ) {
+    public static boolean checkNumberInRange( String key, JsonObject root, Number min, Number max ) {
         JsonElement element = root.get(key);
 
         if ( !isNumber( key, element ) ) { return false; }
@@ -193,7 +193,7 @@ public class DatapackChecker {
         }
         return true;
     }
-    protected static boolean checkStringInEnum( String key, JsonObject root, Class< ? extends Enum<?> > enumClass ) {
+    public static boolean checkStringInEnum( String key, JsonObject root, Class< ? extends Enum<?> > enumClass ) {
         JsonElement element = root.get(key);
 
         Set<String> valid = enumNamesIgnoreFlag(enumClass);
@@ -209,7 +209,7 @@ public class DatapackChecker {
 
         return true;
     }
-    protected static boolean checkStringsInEnum( String key, JsonObject root, Class< ? extends Enum<?> > enumClass ) {
+    public static boolean checkStringsInEnum( String key, JsonObject root, Class< ? extends Enum<?> > enumClass ) {
         JsonElement element = root.get(key);
 
         Set<String> valid = enumNamesIgnoreFlag(enumClass);
@@ -227,7 +227,7 @@ public class DatapackChecker {
 
         return true;
     }
-    protected static boolean checkNumberArrListSorted( String key, JsonObject root ) {
+    public static boolean checkNumberArrListSorted( String key, JsonObject root ) {
         JsonElement element = root.get(key);
 
         if ( !isArrList( key, element ) ) { return false; }
@@ -252,7 +252,7 @@ public class DatapackChecker {
         }
         return true;
     }
-    protected static boolean checkDimensionKey( String key, JsonElement element ) {
+    public static boolean checkDimensionKey( String key, JsonElement element ) {
         if ( !isString(key, element) ) { return false; }
         if ( ResourceLocation.tryParse( element.getAsString() ) == null ) {
             getLogger().warn("[{}] 不是合法的维度标识（应为 namespace:dim，如 deepspace:space）", key);
@@ -261,7 +261,7 @@ public class DatapackChecker {
         return true;
     }
 
-    protected static ArrayList<Integer> getNoDuplicatedSortedArrList(JsonElement element ) {
+    public static ArrayList<Integer> getNoDuplicatedSortedArrList(JsonElement element ) {
         if ( element == null || !element.isJsonArray() ) { return new ArrayList<>(); }
 
         TreeSet<Integer> set = new TreeSet<>();
@@ -270,7 +270,7 @@ public class DatapackChecker {
         }
         return new ArrayList<>(set);
     }
-    protected static Set<String> extractStringArrList(JsonElement element ) {
+    public static Set<String> extractStringArrList(JsonElement element ) {
         if ( element == null || !element.isJsonArray() ) { return new HashSet<>(); }
 
         Set<String> set = new HashSet<>();
@@ -280,7 +280,7 @@ public class DatapackChecker {
         return set;
     }
 
-    protected static boolean isNumber( String key, JsonElement element ) {
+    public static boolean isNumber( String key, JsonElement element ) {
         if (
                 element == null ||
                         ! element.isJsonPrimitive() ||
@@ -291,14 +291,14 @@ public class DatapackChecker {
         }
         return true;
     }
-    protected static boolean isInteger( String key, JsonElement element ) {
+    public static boolean isInteger( String key, JsonElement element ) {
         if ( !isNumber( key, element ) ) { return false; }
         if ( element.getAsJsonPrimitive().getAsBigDecimal().stripTrailingZeros().scale() > 0 ) {
             getLogger().warn("[{}] 不是整数", key);
         }
         return true;
     }
-    protected static boolean isString( String key, JsonElement element ) {
+    public static boolean isString( String key, JsonElement element ) {
         if (
                 element == null ||
                         ! element.isJsonPrimitive() ||
@@ -309,7 +309,7 @@ public class DatapackChecker {
         }
         return true;
     }
-    protected static boolean isArrList( String key, JsonElement element ) {
+    public static boolean isArrList( String key, JsonElement element ) {
         if (
                 element == null ||
                         ! element.isJsonArray()
@@ -319,7 +319,7 @@ public class DatapackChecker {
         }
         return true;
     }
-    protected static boolean isBoolean( String key, JsonElement element ) {
+    public static boolean isBoolean( String key, JsonElement element ) {
         if (
                 element == null ||
                         ! element.isJsonPrimitive() ||
@@ -331,40 +331,40 @@ public class DatapackChecker {
         return true;
     }
 
-    protected static boolean isNumber( String key, JsonObject root ) {
+    public static boolean isNumber( String key, JsonObject root ) {
         JsonElement element = root.get(key);
         return isNumber(key,element);
     }
-    protected static boolean isInteger( String key, JsonObject root ) {
+    public static boolean isInteger( String key, JsonObject root ) {
         JsonElement element = root.get(key);
         return isInteger(key,element);
     }
-    protected static boolean isString( String key, JsonObject root ) {
+    public static boolean isString( String key, JsonObject root ) {
         JsonElement element = root.get(key);
         return isString(key,element);
     }
-    protected static boolean isArrList( String key, JsonObject root ) {
+    public static boolean isArrList( String key, JsonObject root ) {
         JsonElement element = root.get(key);
         return isArrList(key,element);
     }
-    protected static boolean isBoolean( String key, JsonObject root ) {
+    public static boolean isBoolean( String key, JsonObject root ) {
         JsonElement element = root.get(key);
         return isBoolean(key,element);
     }
 
-    protected static Set<String> enumNames(Class<? extends Enum<?>> enumClass) {
+    private static Set<String> enumNames(Class<? extends Enum<?>> enumClass) {
         Set<String> names = new HashSet<>();
         for (Enum<?> constant : enumClass.getEnumConstants()) { names.add(constant.name()); }
         return names;
     }
-    protected static Set<String> enumNamesIgnoreFlag(Class<? extends Enum<?>> enumClass) {
+    private static Set<String> enumNamesIgnoreFlag(Class<? extends Enum<?>> enumClass) {
         Set<String> names = enumNames(enumClass);
         names.remove("invalid");
         names.remove("auto");
 
         return names;
     }
-    protected static Set<String> propertyKeyNames( Class<? extends AbstractSchematicProperty> propertyClass ) {
+    private static Set<String> propertyKeyNames( Class<? extends AbstractSchematicProperty> propertyClass ) {
         Set<String> keys = new HashSet<>();
 
         for ( Field field : propertyClass.getDeclaredFields() ) {
@@ -383,24 +383,24 @@ public class DatapackChecker {
         return SableSpawner.LOGGER;
     }
 
-    private enum FileType {
+    public enum FileType {
         property,
         worldconfig,
         invalid
     }
 
-    protected record PropertyCheckResult(
+    public record PropertyCheckResult(
             boolean isTopLevelKeysValid,
             boolean isTypeKeysValid,
             boolean isAllyPropertyValid,
             boolean isEnemyPropertyValid,
             boolean isPrefabPropertyValid
     ) {
-        protected boolean isAllFalse() {
+        public boolean isAllFalse() {
             return !( isTopLevelKeysValid || isTypeKeysValid || isAllyPropertyValid || isEnemyPropertyValid || isPrefabPropertyValid );
         }
     }
-    protected record WorldConfigCheckResult(
+    public record WorldConfigCheckResult(
             boolean isWorldLevelValid,
             boolean isEnemyPrefixValid,
             boolean isAllyPrefixValid,
@@ -437,7 +437,7 @@ public class DatapackChecker {
                     isSpawnPatternValid
             );
         }
-        protected boolean isAllFalse() {
+        public boolean isAllFalse() {
             return !( isWorldLevelValid || isEnemyPrefixValid || isAllyPrefixValid || isNeutralPrefixValid || isDimensionValid || isSpawnPatternValid );
         }
     }

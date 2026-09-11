@@ -2,7 +2,6 @@ package dev.sable.sablespawner.manager.blueprint;
 
 
 import dev.sable.sablespawner.manager.datapack.property.sublevel.AbstractSchematicProperty;
-import dev.sable.sablespawner.manager.datapack.query.BlueprintQuery;
 import it.unimi.dsi.fastutil.Pair;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import org.jetbrains.annotations.Nullable;

@@ -3,7 +3,10 @@ package dev.sable.sablespawner.manager.blueprint;
 import dev.rew1nd.sableschematicapi.blueprint.SableBlueprint;
 import dev.sable.sablespawner.SableSpawner;
 import dev.sable.sablespawner.manager.datapack.DatapackManager;
+import dev.sable.sablespawner.manager.datapack.DatapackSource;
+import dev.sable.sablespawner.util.FileIOUtil;
 import it.unimi.dsi.fastutil.Pair;
+import it.unimi.dsi.fastutil.objects.ObjectSet;
 import net.minecraft.nbt.CompoundTag;
 import net.minecraft.nbt.NbtAccounter;
 import net.minecraft.nbt.NbtIo;
@@ -13,39 +16,38 @@ import org.slf4j.Logger;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.HashSet;
 import java.util.Set;
-import java.util.stream.Stream;
 
-public class BlueprintProvider {
-    private BlueprintProvider(){}
+public final class BlueprintProvider {
 
-    public static Set<Path> scanFolderBlueprints(DatapackManager.BlueprintSourceModId modId) {
-        return switch ( modId ) {
-            case sable_schematic_api -> scanBlueprintFolder( getSableSchematicApiFolder(), ".nbt" );
-            default ->  new HashSet<>();
-        };
+    public static Set<String> scanBlueprintsOfPack(DatapackSource datapack) {
+        getLogger().info("正在扫描包内蓝图文件");
+
+        Set<String> files = new HashSet<>(FileIOUtil.treeDatapackFileDir(datapack, "data/blueprints"));
+        files.addAll(FileIOUtil.treeDatapackFileDir(datapack, "data/schematics"));
+        return files;
     }
-    private static Set<Path> scanBlueprintFolder(Path path, String suffix ) {
-        getLogger().info("正在扫描文件夹中的蓝图文件");
+    public static Set<String> scanBlueprintsOfFolder() {
+        getLogger().info("正在扫描文件夹内蓝图文件");
+        Set<String> files = new HashSet<>();
+        for ( DatapackManager.BlueprintSourceModId modId : DatapackManager.BlueprintSourceModId.values() ) {
+            String mod = modId.toString();
+            if ( !getModList().isLoaded(mod) ) { continue; }
 
-        Set<Path> files = new HashSet<>();
+            getLogger().info("发现 mod id：" + mod + " ，正在从文件夹加载蓝图");
 
-        if ( !Files.isDirectory(path) ) { return files; }
-
-        try ( Stream<Path> stream = Files.list(path) ) {
-            stream
-                    .filter(Files::isRegularFile)
-                    .filter( p -> p.getFileName().toString().endsWith(suffix) )
-                    .forEach( files::add );
-
-        } catch ( IOException e ) {
-            getLogger().error("此目录下的蓝图加载失败：{}", path, e);
+            files.addAll( scanModFolder(modId) );
         }
 
         return files;
+    }
+    public static Set<String> scanModFolder(DatapackManager.BlueprintSourceModId modId) {
+        return switch ( modId ) {
+            case sable_schematic_api -> FileIOUtil.treeDir(getSableSchematicApiFolder());
+            default ->  new HashSet<>();
+        };
     }
 
     public static Pair<String, Object> getBlueprintObjectOfRef(Path blueprintPath, DatapackManager.BlueprintSourceModId modId) {
@@ -118,4 +120,8 @@ public class BlueprintProvider {
     private static Path getGameDir() {
         return FMLPaths.GAMEDIR.get();
     }
+    private static ObjectSet<DatapackSource> getDatapackRegistry() {
+        return SableSpawner.DATAPACK_MANAGER.getDATAPACK_REGISTRY();
+    }
+
 }

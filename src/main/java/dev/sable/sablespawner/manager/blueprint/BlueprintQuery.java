@@ -1,8 +1,6 @@
-package dev.sable.sablespawner.manager.datapack.query;
+package dev.sable.sablespawner.manager.blueprint;
 
 import dev.sable.sablespawner.manager.datapack.DatapackManager;
-import dev.sable.sablespawner.manager.blueprint.BlueprintEntry;
-import dev.sable.sablespawner.manager.blueprint.BlueprintKey;
 import dev.sable.sablespawner.manager.datapack.property.sublevel.AbstractSchematicProperty;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;

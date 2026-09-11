@@ -6,7 +6,7 @@ public record PropertyKey(
         String packName,
         AbstractSchematicProperty.SublevelType type
 ) {
-    public static PropertyKey of(String path, String packName, AbstractSchematicProperty.SublevelType type) {
-        return new PropertyKey(path, packName, type);
+    public static PropertyKey of(String propertyName, String packName, AbstractSchematicProperty.SublevelType type) {
+        return new PropertyKey(propertyName, packName, type);
     }
 }

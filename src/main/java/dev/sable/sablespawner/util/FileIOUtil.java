@@ -17,6 +17,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.stream.Stream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
@@ -52,19 +53,19 @@ public final class FileIOUtil {
         if ( root.toString().endsWith(".zip") ) {
             return readZipEntryAsBytes(root, concatPath(validRoot, filePath));
         }
-        return readFileAsBytes( root.resolve(validRoot).resolve(filePath) );
+        return readFileAsBytes( folderPathOf(root, validRoot, filePath) );
     }
     public static JsonObject readFileAsJsonObject(Path root, String validRoot, String filePath) {
         if ( root.toString().endsWith(".zip") ) {
             return readZipEntryAsJsonObject(root, concatPath(validRoot, filePath));
         }
-        return readFileAsJsonObject( root.resolve(validRoot).resolve(filePath) );
+        return readFileAsJsonObject( folderPathOf(root, validRoot, filePath) );
     }
     public static CompoundTag readFileAsCompoundTag(Path root, String validRoot, String filePath) {
         if ( root.toString().endsWith(".zip") ) {
             return readZipEntryAsCompoundTag(root, concatPath(validRoot, filePath));
         }
-        return readFileAsCompoundTag( root.resolve(validRoot).resolve(filePath) );
+        return readFileAsCompoundTag( folderPathOf(root, validRoot, filePath) );
     }
 
     public static byte[] readZipEntryAsBytes(Path zip, String entry) {
@@ -116,15 +117,28 @@ public final class FileIOUtil {
     }
 
     public static byte[] readDatapackFileAsBytes(DatapackSource datapackSource, String filePath) {
-        return readFileAsBytes(datapackSource.getRoot(), datapackSource.getRelativeValidRoot(), filePath);
+        return readFileAsBytes(datapackSource.getRoot(), datapackSource.getValidRootEntry(), filePath);
     }
     public static JsonObject readDatapackFileAsJsonObject(DatapackSource datapackSource, String filePath) {
-        return readFileAsJsonObject(datapackSource.getRoot(), datapackSource.getRelativeValidRoot(), filePath);
+        return readFileAsJsonObject(datapackSource.getRoot(), datapackSource.getValidRootEntry(), filePath);
     }
     public static CompoundTag readDatapackFileAsCompoundTag(DatapackSource datapackSource, String filePath) {
-        return readFileAsCompoundTag(datapackSource.getRoot(), datapackSource.getRelativeValidRoot(), filePath);
+        return readFileAsCompoundTag(datapackSource.getRoot(), datapackSource.getValidRootEntry(), filePath);
     }
 
+
+    public static Set<String> treeDir(Path path) {
+        Set<String> files = new HashSet<>();
+        if ( !Files.isDirectory(path) ) { return files; }
+
+        try ( Stream<Path> walk = Files.walk(path) ) {
+            walk.filter(Files::isRegularFile)
+                    .forEach( p -> files.add( path.relativize(p).toString().replace('\\', '/') ) );
+        } catch ( IOException e ) {
+            getLogger().error("扫描目录树失败：{}", path, e);
+        }
+        return files;
+    }
     public static Set<String> listZipEntries(Path zip) {
         Set<String> entryNames = new HashSet<>();
         try ( ZipFile zipFile = new ZipFile(zip.toFile()) ) {
@@ -136,9 +150,48 @@ public final class FileIOUtil {
         }
         return entryNames;
     }
+    public static Set<String> listZipEntriesOfDirEntry(Path zip, String dirEntry) {
+        Set<String> files = new HashSet<>();
+
+        String prefix = dirEntry.isEmpty()
+                ? ""
+                : ( dirEntry.endsWith("/") ? dirEntry : dirEntry + "/" );
+
+        for ( String name : listZipEntries(zip) ) {
+            if ( !name.startsWith(prefix) ) { continue; }
+            if ( name.endsWith("/") ) { continue; }
+
+            files.add(name);
+        }
+        return files;
+    }
+
+    public static Set<String> treeDatapackFileDir(DatapackSource datapackSource, String dir) {
+        if ( datapackSource.isZipFile() ) {
+            String validRoot = datapackSource.getValidRootEntry();
+            String prefix = validRoot == null ? "" : validRoot + "/";
+
+            Set<String> files = new HashSet<>();
+            for ( String entry : listZipEntriesOfDirEntry(datapackSource.getRoot(), concatPath(validRoot, dir)) ) {
+                files.add( entry.substring(prefix.length()) );
+            }
+            return files;
+        }
+
+        Set<String> files = new HashSet<>();
+        for ( String name : treeDir( datapackSource.getRoot().resolve(dir) ) ) {
+            files.add( dir + "/" + name );
+        }
+        return files;
+    }
 
     private static String concatPath(String validRoot, String path) {
-        return validRoot.isEmpty() ? path : validRoot + "/" + path;
+        if ( validRoot == null || validRoot.isEmpty() ) { return path; }
+        return validRoot + "/" + path;
+    }
+    private static Path folderPathOf(Path root, String validRoot, String filePath) {
+        if ( validRoot == null || validRoot.isEmpty() ) { return root.resolve(filePath); }
+        return root.resolve(validRoot).resolve(filePath);
     }
 
     private static Logger getLogger() {

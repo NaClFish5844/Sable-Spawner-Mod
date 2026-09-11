@@ -4,7 +4,6 @@ import com.google.gson.JsonObject;
 import dev.sable.sablespawner.SableSpawner;
 import dev.sable.sablespawner.util.FileIOUtil;
 import net.neoforged.fml.loading.FMLPaths;
-import org.checkerframework.checker.units.qual.N;
 import org.jetbrains.annotations.NotNull;
 import org.slf4j.Logger;
 
@@ -14,13 +13,11 @@ import java.io.InputStream;
 import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.*;
-import java.util.stream.Stream;
 import java.util.zip.ZipFile;
 
 public final class DatapackScanner {
-    public static final List<FileSystem> zipHolder = new ArrayList<>();
-
     // 此处的所有scan开头的public方法只返回路径
+    // 此处所有方法只应该在DatapackLoader中使用
     public static Set<Path> scanDatapackRoots() {
         Set<Path> roots = new HashSet<>();
         Path start = getSableSpawnerDir();
@@ -144,51 +141,20 @@ public final class DatapackScanner {
     public static Set<String> scanPropertiesOfPack(DatapackSource datapack) {
         getLogger().info("正在扫描蓝图属性文件");
 
-        return scanFiles(validRoot.resolve("data/properties"), ".json");
+        return FileIOUtil.treeDatapackFileDir(datapack, "data/properties");
     }
     public static Set<String> scanWorldConfigsOfPack(DatapackSource datapack) {
         getLogger().info("正在扫描维度配置文件");
 
-        Set<Path> files = scanFiles(validRoot.resolve("data/worldconfig"), ".json");
-        Set<Path> defaultConfigs = new HashSet<>();
-
-        for ( Path p : files ) {
-            if ( p.getFileName().toString().equals("default.json") ) { defaultConfigs.add(p); }
-        }
-        if ( !defaultConfigs.isEmpty() ) {
-            getLogger().warn("请勿在数据包中加入 default.json");
-            for ( Path d : defaultConfigs ) { files.remove( d ); }
-        }
-
-        return files;
+        return FileIOUtil.treeDatapackFileDir(datapack, "data/worldconfig");
     }
-    public static Set<String> scanBlueprintsOfPack(DatapackSource datapack) {
-        getLogger().info("正在扫描包内蓝图文件");
-
-        Set<Path> files = new HashSet<>(scanFiles(validRoot.resolve("data/blueprints"), ".nbt"));
-        files.addAll(scanFiles(validRoot.resolve("data/schematics"), ".nbt"));
-        return files;
-    }
-
-    @Nullable public static String getBlueprintInValidRoot(String schematicPath, Path validRoot) {
-        String packPrefix = validRoot.getFileName().toString() + "/";
-        String relative = schematicPath.startsWith(packPrefix)
-                ? schematicPath.substring(packPrefix.length())
-                : schematicPath;
-
-        Path target = validRoot.resolve(relative);
-        if ( Files.isRegularFile(target) ) { return target; }
-
-        getLogger().warn("此位置未找到蓝图：{}", schematicPath);
-        return null;
-    }
-
 
     private static boolean isValidPackRoot(Path path) {
         return Files.isDirectory(path.resolve("data")) && Files.isRegularFile(path.resolve("meta.json"));
     }
     private static String concatPath(String validRoot, String path) {
-        return validRoot.isEmpty() ? path : validRoot + "/" + path;
+        if ( validRoot == null || validRoot.isEmpty() ) { return path; }
+        return validRoot + "/" + path;
     }
     private static String trimTrailingSlash(String path) {
         return path.endsWith("/") ? path.substring(0, path.length() - 1) : path;

@@ -32,12 +32,5 @@ public class DatapackSource {
     public boolean isZipFile() {
         return this.root.toString().endsWith(".zip");
     }
-    @Nullable public Path getValidRootOfFolder() {
-        if ( isZipFile() ) { return null; }
-        return root;
-    }
-    @Nullable public String getValidRootOfZip() {
-        if ( !isZipFile() ) { return null; }
-        return validRootEntry;
-    }
+
 }
