@@ -49,7 +49,7 @@ public final class DatapackLoader {
         Path path = DatapackScanner.getDefaultConfig();
         if ( path == null ) { return defaultConfig; }
 
-        JsonObject object = FileIOUtil.readFileAsJsonObject(path);
+        JsonObject object = FileIOUtil.readFile(path, FileIOUtil::readAsJson);
         if ( object == null ) { return defaultConfig; }
 
         if ( DatapackChecker.checkDefaultWorldConfigFormat(object) ) {
@@ -68,7 +68,7 @@ public final class DatapackLoader {
         String packName = datapack.getPackMeta().packName();
 
         for ( String path : propertyPath ) {
-            JsonObject object = FileIOUtil.readDatapackFileAsJsonObject(datapack, path);
+            JsonObject object = FileIOUtil.readDatapackFile(datapack, path, FileIOUtil::readAsJson);
             if ( object == null ) {
                 getLogger().warn("加载蓝图属性文件失败：{} -> {}", packName, path);
                 continue;
@@ -106,7 +106,7 @@ public final class DatapackLoader {
         for ( String path : configPath ) {
             WorldConfig worldConfig = WorldConfig.ofBasic(defaultConfig);
 
-            JsonObject object = FileIOUtil.readDatapackFileAsJsonObject(datapack, path);
+            JsonObject object = FileIOUtil.readDatapackFile(datapack, path, FileIOUtil::readAsJson);
             if ( object == null ) {
                 getLogger().warn("加载世界配置文件失败：{} -> {}", datapack.getPackMeta().packName(), path);
                 continue;
@@ -167,7 +167,8 @@ public final class DatapackLoader {
         dest.setSchematicName(name);
 
         if ( dest.getSchematicSource() == DatapackManager.BlueprintSourceFileLocation.folder ) {
-            String path = getSableSchematicApiFolder().resolve(name).toString();
+            String path = FileIOUtil.pathToString( getSableSchematicApiFolder().resolve(name) );
+
             dest.setSchematicPath(path);
 
         } else if ( dest.getSchematicSource() == DatapackManager.BlueprintSourceFileLocation.datapack ) {

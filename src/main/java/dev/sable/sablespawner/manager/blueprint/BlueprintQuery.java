@@ -31,14 +31,6 @@ public class BlueprintQuery {
                 && k.name().toLowerCase().contains(part.toLowerCase()));
         return this;
     }
-    public BlueprintQuery ofSourceModId(DatapackManager.BlueprintSourceModId modId) {
-        keyPredicate = keyPredicate.and(k -> k.sourceMod() == modId );
-        return this;
-    }
-    public BlueprintQuery ofSourceModId(String modId) {
-        keyPredicate = keyPredicate.and(k -> Objects.equals(k.sourceMod().toString(), modId) );
-        return this;
-    }
     public BlueprintQuery ofFileHash(String hash) {
         keyPredicate = keyPredicate.and(k -> k.fileHash().equals(hash) );
         return this;
@@ -49,12 +41,16 @@ public class BlueprintQuery {
     }
 
 
-    public BlueprintQuery fromFolder() {
-        entryPredicate = entryPredicate.and( BlueprintEntry::isPathRef);
+    public BlueprintQuery ofSourceModId(DatapackManager.BlueprintSourceModId modId) {
+        entryPredicate = entryPredicate.and(e -> e.sourceMod() == modId );
+        return this;
+    }
+    public BlueprintQuery ofSourceModId(String modId) {
+        entryPredicate = entryPredicate.and(e -> Objects.equals(e.sourceMod().toString(), modId) );
         return this;
     }
     public BlueprintQuery isBuffered() {
-        entryPredicate = entryPredicate.and( BlueprintEntry::isBuffered );
+        entryPredicate = entryPredicate.and( BlueprintEntry::isBuffered);
         return this;
     }
     public BlueprintQuery notBuffered() {

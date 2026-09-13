@@ -102,7 +102,7 @@ public final class DatapackScanner {
             }
         }
 
-        JsonObject object = FileIOUtil.readFileAsJsonObject(root, validRootPath, "meta.json");
+        JsonObject object = FileIOUtil.readFile(root, validRootPath, "meta.json", FileIOUtil::readAsJson);
 
         if ( object == null ) {
             getLogger().error("读取数据包元信息失败：{}", root);

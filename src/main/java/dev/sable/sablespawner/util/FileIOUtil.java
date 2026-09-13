@@ -17,58 +17,36 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.HashSet;
 import java.util.Set;
+import java.util.function.Function;
 import java.util.stream.Stream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
 public final class FileIOUtil {
-    public static byte[] readFileAsBytes(Path path) {
-        try {
-            return Files.readAllBytes(path);
+
+    public static <T> T readFile(Path path, Function<InputStream, T> reader) {
+        try ( InputStream stream = Files.newInputStream(path) ) {
+            return reader.apply(stream);
         } catch ( IOException e ) {
             getLogger().error("读取文件失败：{}", path, e);
             return null;
         }
     }
-    public static JsonObject readFileAsJsonObject(Path path) {
-        try ( InputStream stream = Files.newInputStream(path) ) {
-            return JsonParser.parseReader(
-                    new InputStreamReader(stream, StandardCharsets.UTF_8)
-            ).getAsJsonObject();
-        } catch ( IOException | RuntimeException e ) {
-            getLogger().error("读取 JSON 文件失败：{}", path, e);
-            return null;
-        }
-    }
-    public static CompoundTag readFileAsCompoundTag(Path path) {
-        try {
-            return NbtIo.readCompressed(path, NbtAccounter.unlimitedHeap());
+    public static <T> T readFile(String path, Function<InputStream, T> reader) {
+        try ( InputStream stream = Files.newInputStream( Path.of(path) ) ) {
+            return reader.apply(stream);
         } catch ( IOException e ) {
-            getLogger().error("读取 NBT 文件失败：{}", path, e);
+            getLogger().error("读取文件失败：{}", path, e);
             return null;
         }
     }
-
-    public static byte[] readFileAsBytes(Path root, String validRoot, String filePath) {
+    public static <T> T readFile(Path root, String validRoot, String filePath, Function<InputStream, T> reader) {
         if ( root.toString().endsWith(".zip") ) {
-            return readZipEntryAsBytes(root, concatPath(validRoot, filePath));
+            return readZipEntry(root, concatPath(validRoot, filePath), reader);
         }
-        return readFileAsBytes( folderPathOf(root, validRoot, filePath) );
+        return readFile( folderPathOf(root, validRoot, filePath), reader );
     }
-    public static JsonObject readFileAsJsonObject(Path root, String validRoot, String filePath) {
-        if ( root.toString().endsWith(".zip") ) {
-            return readZipEntryAsJsonObject(root, concatPath(validRoot, filePath));
-        }
-        return readFileAsJsonObject( folderPathOf(root, validRoot, filePath) );
-    }
-    public static CompoundTag readFileAsCompoundTag(Path root, String validRoot, String filePath) {
-        if ( root.toString().endsWith(".zip") ) {
-            return readZipEntryAsCompoundTag(root, concatPath(validRoot, filePath));
-        }
-        return readFileAsCompoundTag( folderPathOf(root, validRoot, filePath) );
-    }
-
-    public static byte[] readZipEntryAsBytes(Path zip, String entry) {
+    public static <T> T readZipEntry(Path zip, String entry, Function<InputStream, T> reader) {
         try ( ZipFile zipFile = new ZipFile(zip.toFile()) ) {
             ZipEntry zipEntry = zipFile.getEntry(entry);
             if ( zipEntry == null ) {
@@ -76,56 +54,70 @@ public final class FileIOUtil {
                 return null;
             }
             try ( InputStream stream = zipFile.getInputStream(zipEntry) ) {
-                return stream.readAllBytes();
+                return reader.apply(stream);
             }
         } catch ( IOException e ) {
             getLogger().error("读取压缩包条目失败：{} -> {}", zip, entry, e);
             return null;
         }
     }
-    public static JsonObject readZipEntryAsJsonObject(Path zip, String entry) {
-        try ( ZipFile zipFile = new ZipFile(zip.toFile()) ) {
-            ZipEntry zipEntry = zipFile.getEntry(entry);
-            if ( zipEntry == null ) {
-                getLogger().warn("压缩包内未找到条目：{} -> {}", zip, entry);
-                return null;
-            }
-            try ( InputStream stream = zipFile.getInputStream(zipEntry) ) {
-                return JsonParser.parseReader(
-                        new InputStreamReader(stream, StandardCharsets.UTF_8)
-                ).getAsJsonObject();
-            }
-        } catch ( IOException | RuntimeException e ) {
-            getLogger().error("读取压缩包 JSON 文件失败：{} -> {}", zip, entry, e);
-            return null;
-        }
+    public static <T> T readDatapackFile(DatapackSource datapack, String filePath, Function<InputStream, T> reader) {
+        return readFile(datapack.getRoot(), datapack.getValidRootEntry(), filePath, reader);
     }
-    public static CompoundTag readZipEntryAsCompoundTag(Path zip, String entry) {
-        try ( ZipFile zipFile = new ZipFile(zip.toFile()) ) {
-            ZipEntry zipEntry = zipFile.getEntry(entry);
-            if ( zipEntry == null ) {
-                getLogger().warn("压缩包内未找到条目：{} -> {}", zip, entry);
-                return null;
-            }
-            try ( InputStream stream = zipFile.getInputStream(zipEntry) ) {
-                return NbtIo.readCompressed(stream, NbtAccounter.unlimitedHeap());
-            }
+
+    public static byte[] readAsBytes(InputStream stream) {
+        try {
+            return stream.readAllBytes();
         } catch ( IOException e ) {
-            getLogger().error("读取压缩包 NBT 文件失败：{} -> {}", zip, entry, e);
+            getLogger().error("读取 Stream 失败", e);
+            return null;
+        }
+    }
+    public static JsonObject readAsJson(InputStream stream) {
+        try {
+            return JsonParser.parseReader( new InputStreamReader(stream, StandardCharsets.UTF_8) ).getAsJsonObject();
+        } catch ( RuntimeException e ) {
+            getLogger().error("读取 JSON 失败", e);
+            return null;
+        }
+    }
+    public static CompoundTag readAsNbt(InputStream stream) {
+        try {
+            return NbtIo.readCompressed(stream, NbtAccounter.unlimitedHeap());
+        } catch ( IOException e ) {
+            getLogger().error("读取 NBT 失败", e);
             return null;
         }
     }
 
-    public static byte[] readDatapackFileAsBytes(DatapackSource datapackSource, String filePath) {
-        return readFileAsBytes(datapackSource.getRoot(), datapackSource.getValidRootEntry(), filePath);
-    }
-    public static JsonObject readDatapackFileAsJsonObject(DatapackSource datapackSource, String filePath) {
-        return readFileAsJsonObject(datapackSource.getRoot(), datapackSource.getValidRootEntry(), filePath);
-    }
-    public static CompoundTag readDatapackFileAsCompoundTag(DatapackSource datapackSource, String filePath) {
-        return readFileAsCompoundTag(datapackSource.getRoot(), datapackSource.getValidRootEntry(), filePath);
-    }
 
+    public static <T> T readDatapackFileStream(DatapackSource datapack, String filePath, Function<InputStream, T> reader) {
+        if ( datapack.isZipFile() ) {
+            String validRoot = datapack.getValidRootEntry();
+
+            try ( ZipFile zipFile = new ZipFile(datapack.getRoot().toFile()) ) {
+                ZipEntry entry = zipFile.getEntry( concatPath(validRoot, filePath) );
+                if ( entry == null ) {
+                    getLogger().warn("压缩包内未找到条目：{} -> {}", datapack.getRoot(), filePath);
+                    return null;
+                }
+                try ( InputStream stream = zipFile.getInputStream(entry) ) {
+                    return reader.apply(stream);
+                }
+            } catch ( IOException e ) {
+                getLogger().error("读取压缩包文件失败：{} -> {}", datapack.getRoot(), filePath, e);
+                return null;
+            }
+        }
+
+        Path file = folderPathOf(datapack.getRoot(), datapack.getValidRootEntry(), filePath);
+        try ( InputStream stream = Files.newInputStream(file) ) {
+            return reader.apply(stream);
+        } catch ( IOException e ) {
+            getLogger().error("读取数据包文件失败：{}", file, e);
+            return null;
+        }
+    }
 
     public static Set<String> treeDir(Path path) {
         Set<String> files = new HashSet<>();
@@ -133,7 +125,7 @@ public final class FileIOUtil {
 
         try ( Stream<Path> walk = Files.walk(path) ) {
             walk.filter(Files::isRegularFile)
-                    .forEach( p -> files.add( path.relativize(p).toString().replace('\\', '/') ) );
+                    .forEach( p -> files.add( pathToString(path.relativize(p)) ) );
         } catch ( IOException e ) {
             getLogger().error("扫描目录树失败：{}", path, e);
         }
@@ -185,6 +177,11 @@ public final class FileIOUtil {
         return files;
     }
 
+    public static String pathToString(Path path) {
+        if ( path == null ) { return null; }
+        return path.toString().replace('\\', '/');
+    }
+
     private static String concatPath(String validRoot, String path) {
         if ( validRoot == null || validRoot.isEmpty() ) { return path; }
         return validRoot + "/" + path;
@@ -197,4 +194,6 @@ public final class FileIOUtil {
     private static Logger getLogger() {
         return SableSpawner.LOGGER;
     }
+
+
 }

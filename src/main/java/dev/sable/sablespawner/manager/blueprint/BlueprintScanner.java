@@ -20,28 +20,37 @@ import java.nio.file.Path;
 import java.util.HashSet;
 import java.util.Set;
 
-public final class BlueprintProvider {
+public final class BlueprintScanner {
 
-    public static Set<String> scanBlueprintsOfPack(DatapackSource datapack) {
+    public static Set<BlueprintEntry> scanBlueprintsOfPack(DatapackSource datapack) {
         getLogger().info("正在扫描包内蓝图文件");
 
-        Set<String> files = new HashSet<>(FileIOUtil.treeDatapackFileDir(datapack, "data/blueprints"));
-        files.addAll(FileIOUtil.treeDatapackFileDir(datapack, "data/schematics"));
-        return files;
+        Set<BlueprintEntry> entries = new HashSet<>();
+        Set<String> files = FileIOUtil.treeDatapackFileDir(datapack, "data/blueprints");
+
+        if ( files.isEmpty() ) { return entries; }
+
+        for ( String path : files ) {
+            BlueprintEntry e = BlueprintEntry.ofUnknownSource(datapack, path);
+        }
+
     }
-    public static Set<String> scanBlueprintsOfFolder() {
+    public static Set<BlueprintEntry> scanBlueprintsOfFolder() {
         getLogger().info("正在扫描文件夹内蓝图文件");
+
+        Set<BlueprintEntry> entries = new HashSet<>();
         Set<String> files = new HashSet<>();
+
         for ( DatapackManager.BlueprintSourceModId modId : DatapackManager.BlueprintSourceModId.values() ) {
             String mod = modId.toString();
             if ( !getModList().isLoaded(mod) ) { continue; }
 
-            getLogger().info("发现 mod id：" + mod + " ，正在从文件夹加载蓝图");
+            getLogger().info("发现 mod id：{} 正在从文件夹加载蓝图", mod);
 
             files.addAll( scanModFolder(modId) );
         }
 
-        return files;
+        return entries;
     }
     public static Set<String> scanModFolder(DatapackManager.BlueprintSourceModId modId) {
         return switch ( modId ) {
@@ -54,7 +63,7 @@ public final class BlueprintProvider {
         DatapackManager.BlueprintSourceModId mid;
         mid = modId;
 
-        if ( mid == DatapackManager.BlueprintSourceModId.auto ) { mid = interpretBlueprintSource(blueprintPath); }
+        if ( mid == DatapackManager.BlueprintSourceModId.auto ) { mid = BlueprintInterpreter.interpretBlueprintSource(blueprintPath); }
         switch (mid) {
             case sable_schematic_api -> {
                 try {
@@ -66,11 +75,11 @@ public final class BlueprintProvider {
 
                 } catch (IOException e) {
                     getLogger().error("蓝图加载失败");
-                    return Pair.of("Path", null);
+                    return Pair.of("path", null);
                 }
             }
             default -> {
-                return Pair.of("Path", null);
+                return Pair.of("path", null);
             }
         }
     }
@@ -78,7 +87,7 @@ public final class BlueprintProvider {
         DatapackManager.BlueprintSourceModId mid;
         mid = modId;
 
-        if ( mid == DatapackManager.BlueprintSourceModId.auto ) { mid = interpretBlueprintSource(blueprintStream); }
+        if ( mid == DatapackManager.BlueprintSourceModId.auto ) { mid = BlueprintInterpreter.interpretBlueprintSource(blueprintStream); }
         switch (mid) {
             case sable_schematic_api -> {
                 try {
@@ -90,21 +99,13 @@ public final class BlueprintProvider {
 
                 } catch (IOException e) {
                     getLogger().error("蓝图加载失败");
-                    return Pair.of("Path", null);
+                    return Pair.of("path", null);
                 }
             }
             default -> {
-                return Pair.of("Path", null);
+                return Pair.of("path", null);
             }
         }
-    }
-
-    // 这是未填写源mod的蓝图的自动解析 预计非常复杂 以后再说
-    public static DatapackManager.BlueprintSourceModId interpretBlueprintSource(Path blueprintPath) {
-        return DatapackManager.BlueprintSourceModId.invalid;
-    }
-    public static DatapackManager.BlueprintSourceModId interpretBlueprintSource(InputStream blueprintStream) {
-        return DatapackManager.BlueprintSourceModId.invalid;
     }
 
     private static Path getSableSchematicApiFolder() {
@@ -123,5 +124,7 @@ public final class BlueprintProvider {
     private static ObjectSet<DatapackSource> getDatapackRegistry() {
         return SableSpawner.DATAPACK_MANAGER.getDATAPACK_REGISTRY();
     }
+
+
 
 }
