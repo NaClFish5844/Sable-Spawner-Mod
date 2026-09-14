@@ -25,12 +25,10 @@ public class DatapackManager {
     public enum BlueprintSourceFileLocation {
         datapack,
         folder,
-        auto,
         invalid
     }
     public enum BlueprintSourceModId {
         sable_schematic_api,
-        auto,
         invalid
     }
 
@@ -67,15 +65,12 @@ public class DatapackManager {
 
     }
 
-
-
     public PropertyQuery propertyQuery() {
         return new PropertyQuery(PROPERTY_MANAGER);
     }
     public WorldConfigQuery worldConfigQuery() {
         return new WorldConfigQuery(WORLDCONFIG_MANAGER);
     }
-
 
     private static Logger getLogger() {
         return SableSpawner.LOGGER;

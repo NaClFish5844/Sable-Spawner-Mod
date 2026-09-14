@@ -4,8 +4,6 @@ import dev.sable.sablespawner.manager.datapack.DatapackManager;
 import lombok.Getter;
 import lombok.Setter;
 
-import javax.annotation.Nullable;
-
 
 @Getter @Setter
 public abstract class AbstractSchematicProperty {
@@ -28,8 +26,6 @@ public abstract class AbstractSchematicProperty {
     private DatapackManager.BlueprintSourceModId sourceModId;
 
     private String schematicName;
-    private String schematicPath;
-    @Nullable private String schematicHash = null;
 
     private SublevelType sublevelType;
     private SublevelFunction sublevelFunction;
@@ -39,7 +35,6 @@ public abstract class AbstractSchematicProperty {
             DatapackManager.BlueprintSourceFileLocation schematicSource,
             DatapackManager.BlueprintSourceModId sourceModId,
             String schematicName,
-            String schematicPath,
             SublevelType sublevelType,
             SublevelFunction sublevelFunction
     ) {
@@ -47,7 +42,6 @@ public abstract class AbstractSchematicProperty {
         this.schematicSource = schematicSource;
         this.sourceModId = sourceModId;
         this.schematicName = schematicName;
-        this.schematicPath = schematicPath;
         this.sublevelType = sublevelType;
         this.sublevelFunction = sublevelFunction;
     }
@@ -56,8 +50,8 @@ public abstract class AbstractSchematicProperty {
         this(
                 null,
                 DatapackManager.BlueprintSourceFileLocation.invalid,
-                DatapackManager.BlueprintSourceModId.auto,
-                "unknown", null,
+                null,
+                "unknown",
                 SublevelType.invalid,
                 SublevelFunction.invalid
         );
@@ -68,7 +62,6 @@ public abstract class AbstractSchematicProperty {
         this.schematicSource = base.schematicSource;
         this.sourceModId = base.sourceModId;
         this.schematicName = base.schematicName;
-        this.schematicPath = base.schematicPath;
         this.sublevelType = base.sublevelType;
         this.sublevelFunction = base.sublevelFunction;
     }

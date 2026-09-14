@@ -13,25 +13,27 @@ public record BlueprintEntry(
         @Nullable String path,
         @Nullable Object object
 ) {
-    public static BlueprintEntry ofUnknownSource(Path path) {
-        BlueprintEntry e = new BlueprintEntry(
-                DatapackManager.BlueprintSourceModId.auto,
+    public static BlueprintEntry ofUnknownSource(String path) {
+        DatapackManager.BlueprintSourceModId source =
+                BlueprintInterpreter.interpretBlueprintSource(path, null);
+
+        return new BlueprintEntry(
+                source,
                 null,
-                FileIOUtil.pathToString(path),
+                path,
                 null
         );
-
-        return parseAutoSource(e);
     }
     public static BlueprintEntry ofUnknownSource(DatapackSource datapack, String path) {
-        BlueprintEntry e = new BlueprintEntry(
-                DatapackManager.BlueprintSourceModId.auto,
+        DatapackManager.BlueprintSourceModId source =
+                BlueprintInterpreter.interpretBlueprintSource(datapack, path, null);
+
+        return new BlueprintEntry(
+                source,
                 datapack,
                 path,
                 null
         );
-
-        return parseAutoSource(e);
     }
 
     public static BlueprintEntry ofPath(DatapackManager.BlueprintSourceModId sourceMod, Path path) {
@@ -47,9 +49,9 @@ public record BlueprintEntry(
     public static BlueprintEntry updateSource(BlueprintEntry oldEntry, DatapackManager.BlueprintSourceModId newSource) {
         return new BlueprintEntry(newSource, oldEntry.datapackSource, oldEntry.path, oldEntry.object);
     }
-    public static BlueprintEntry parseAutoSource(BlueprintEntry oldEntry) {
+    public static BlueprintEntry autoParseSource(BlueprintEntry oldEntry) {
         DatapackManager.BlueprintSourceModId newSource =
-                BlueprintInterpreter.interpretBlueprintSource( oldEntry );
+                BlueprintInterpreter.interpretBlueprintSource(oldEntry, oldEntry.sourceMod);
 
         return new BlueprintEntry(newSource, oldEntry.datapackSource, oldEntry.path, oldEntry.object);
     }

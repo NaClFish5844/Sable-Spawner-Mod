@@ -360,7 +360,6 @@ public final class DatapackChecker {
     private static Set<String> enumNamesIgnoreFlag(Class<? extends Enum<?>> enumClass) {
         Set<String> names = enumNames(enumClass);
         names.remove("invalid");
-        names.remove("auto");
 
         return names;
     }

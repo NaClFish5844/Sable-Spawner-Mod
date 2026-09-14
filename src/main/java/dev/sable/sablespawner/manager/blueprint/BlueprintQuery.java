@@ -35,11 +35,6 @@ public class BlueprintQuery {
         keyPredicate = keyPredicate.and(k -> k.fileHash().equals(hash) );
         return this;
     }
-    public BlueprintQuery ofProperty(AbstractSchematicProperty property) {
-        keyPredicate = keyPredicate.and(k -> Objects.equals( k.fileHash(), property.getSchematicHash()));
-        return this;
-    }
-
 
     public BlueprintQuery ofSourceModId(DatapackManager.BlueprintSourceModId modId) {
         entryPredicate = entryPredicate.and(e -> e.sourceMod() == modId );

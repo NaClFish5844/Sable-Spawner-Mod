@@ -133,7 +133,6 @@ public final class DatapackLoader {
         return configs;
     }
 
-
     private static EnemyProperty parseAsEnemyProperty(DatapackSource datapack, JsonObject object) {
         return (EnemyProperty) parseBlock(datapack.getPackMeta().packName(), object, "enemy_property", EnemyProperty.class );
     }
@@ -163,17 +162,7 @@ public final class DatapackLoader {
         dest.setSourceModId(DatapackManager.BlueprintSourceModId.valueOf(object.get("source_mod_id").getAsString()));
 
         String name = object.get("schematic_name").getAsString();
-        String datapackPath = packName + "/data/blueprints/" + name;
         dest.setSchematicName(name);
-
-        if ( dest.getSchematicSource() == DatapackManager.BlueprintSourceFileLocation.folder ) {
-            String path = FileIOUtil.pathToString( getSableSchematicApiFolder().resolve(name) );
-
-            dest.setSchematicPath(path);
-
-        } else if ( dest.getSchematicSource() == DatapackManager.BlueprintSourceFileLocation.datapack ) {
-            dest.setSchematicPath(datapackPath);
-        }
 
         if ( object.has("sublevel_function") ) {
             dest.setSublevelFunction(AbstractSchematicProperty.SublevelFunction.valueOf(object.get("sublevel_function").getAsString()));

@@ -17,9 +17,9 @@ public record BlueprintKey(
         if ( path == null ) { return null; }
 
         DatapackSource datapack = entry.datapackSource();
-        String fileHash = ( datapack == null )
-                ? FileHashUtil.getFileMD5( Path.of(path) )
-                : FileHashUtil.getDatapackFileMD5( datapack, path );
+        String fileHash = null;
+        if (entry.hasPathReference()) { fileHash = FileHashUtil.getFileMD5(Path.of(path)); }
+        if (entry.hasDatapackPathReference()) { fileHash = FileHashUtil.getDatapackFileMD5(datapack, path); }
 
         if ( fileHash == null ) { return null; }
 
