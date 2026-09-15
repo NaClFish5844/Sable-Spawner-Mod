@@ -9,6 +9,7 @@ import dev.sable.sablespawner.SableSpawnerConfig;
 import dev.sable.sablespawner.manager.datapack.DatapackManager;
 import dev.sable.sablespawner.manager.datapack.property.config.WorldConfig;
 import dev.sable.sablespawner.manager.datapack.property.sublevel.EnemyProperty;
+import dev.sable.sablespawner.manager.datapack.property.sublevel.PropertyKey;
 import dev.sable.sablespawner.player.PlayerManager;
 import dev.sable.sablespawner.player.PlayerStatus;
 import dev.sable.sablespawner.spawn.session.EnemySubLevelTracker;
@@ -16,6 +17,7 @@ import dev.sable.sablespawner.spawn.session.SpawnQueue;
 import dev.sable.sablespawner.spawn.session.entry.EnemySubLevelEntry;
 import dev.sable.sablespawner.spawn.session.entry.SpawnTicket;
 import dev.sable.sablespawner.util.BoxUtil;
+import dev.sable.sablespawner.util.SpawnPatternUtil;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import it.unimi.dsi.fastutil.objects.ObjectList;
@@ -23,6 +25,7 @@ import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
+import net.neoforged.fml.ModList;
 import org.joml.Vector3d;
 
 import java.util.*;
@@ -107,7 +110,7 @@ public class EnemyControl {
     }
 
     public boolean spawn(SpawnTicket ticket) {
-        UUID targetUUID = ticket.getTarget();
+        UUID targetUUID = ticket.targetPlayer();
         ServerPlayer target = (ServerPlayer) LEVEL.getPlayerByUUID(targetUUID);
         if ( target == null ) { return false; }
 
@@ -116,19 +119,23 @@ public class EnemyControl {
                 target.position().y,
                 target.position().z
                 );
-        ObjectList<BlueprintPlacementPlan> placementPlans = ticket.getBlueprintPlacementPlans( targetPos );
+
+        // 此处需要加蓝图源mod判断
+        if ( !ModList.get().isLoaded("sable_schematic_api") ) { return false; }
+        ObjectList<BlueprintPlacementPlan> placementPlans = SpawnPatternUtil.newSableBlueprintPlacementPlan(ticket,targetPos);
+
         if ( placementPlans.isEmpty() ) { return false; }
 
         for ( BlueprintPlacementPlan plan : placementPlans ) {
             if( !SPAWNER.BoundBoxVacantDetection(LEVEL, plan) ) { return false; }
         }
 
-        EnemyProperty property = ticket.getProperty();
+        PropertyKey propertyKey = ticket.propertyKey();
 
         ObjectList<ServerSubLevel> buffer = new ObjectArrayList<>();
 
         for ( BlueprintPlacementPlan plan : placementPlans ) {
-            ServerSubLevel spawnedSubLevel = SPAWNER.spawnSublevelAsEnemy( property, LEVEL, plan );
+            ServerSubLevel spawnedSubLevel = SPAWNER.spawnSublevelAs( propertyKey, LEVEL, plan );
             buffer.add(spawnedSubLevel);
 
             if ( spawnedSubLevel == null ) {
@@ -139,7 +146,7 @@ public class EnemyControl {
                 return false;
             }
 
-            EnemySubLevelEntry entry = new EnemySubLevelEntry( property, spawnedSubLevel, targetUUID );
+            EnemySubLevelEntry entry = new EnemySubLevelEntry( ticket.property(), spawnedSubLevel, targetUUID );
 
             this.deferredEnemySubLevelEntryAppender.add(entry);
         }

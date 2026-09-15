@@ -3,11 +3,11 @@ package dev.sable.sablespawner.spawn.session;
 import dev.sable.sablespawner.SableSpawner;
 import dev.sable.sablespawner.manager.datapack.DatapackManager;
 import dev.sable.sablespawner.manager.datapack.property.config.WorldConfig;
-import dev.sable.sablespawner.manager.datapack.property.sublevel.AbstractSchematicProperty;
-import dev.sable.sablespawner.manager.datapack.property.sublevel.EnemyProperty;
+import dev.sable.sablespawner.manager.datapack.property.sublevel.PropertyKey;
 import dev.sable.sablespawner.player.PlayerManager;
 import dev.sable.sablespawner.player.PlayerStatus;
 import dev.sable.sablespawner.spawn.session.entry.SpawnTicket;
+import dev.sable.sablespawner.spawn.session.entry.SpawnTicketBuilder;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import lombok.Getter;
 import net.minecraft.server.level.ServerLevel;
@@ -43,10 +43,10 @@ public class SpawnQueue {
     }
 
     private void push(UUID playerUUID) {
-        EnemyProperty property = selectEnemy(playerUUID);
-        if ( property == null ) { return; }
+        PropertyKey propertyKey = selectEnemy(playerUUID);
+        if ( propertyKey == null ) { return; }
 
-        SpawnTicket ticket = new SpawnTicket( property, playerUUID );
+        SpawnTicket ticket = SpawnTicketBuilder.of( propertyKey, playerUUID );
         this.queue.put( playerUUID, ticket );
     }
     @Nullable public SpawnTicket pop(UUID playerUUID) {
@@ -56,7 +56,7 @@ public class SpawnQueue {
         return this.queue.remove( player.getUUID() );
     }
 
-    @Nullable private EnemyProperty selectEnemy(UUID playerUUID) {
+    @Nullable private PropertyKey selectEnemy(UUID playerUUID) {
         Object2ObjectOpenHashMap<UUID, PlayerStatus> player =
                 getPlayerManager().query()
                         .ofUUID(playerUUID)
@@ -66,13 +66,12 @@ public class SpawnQueue {
         int playerScore = player.values().iterator().next().getScore();
         int playerScoreLevel = getScoreLevel(playerScore);
 
-        AbstractSchematicProperty picked = getDatapackManager().propertyQuery()
+        return getDatapackManager().propertyQuery()
                 .isEnemy()
                 .isNaturalSpawn()
                 .ofDimension(LEVEL)
                 .ofWorldLevel(playerScoreLevel)
                 .pickEnemy();
-        return picked instanceof EnemyProperty enemy ? enemy : null;
     }
 
     private int getScoreLevel(int score) {

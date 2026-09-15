@@ -21,16 +21,16 @@ public class PropertyQuery {
 
     public PropertyQuery(Object2ObjectOpenHashMap<PropertyKey, AbstractSchematicProperty> source) { this.source = source; }
 
-    public PropertyQuery ofPath(String path) {
-        keyPredicate = keyPredicate.and(k -> Objects.equals(k.path(), path) );
+    public PropertyQuery ofPackName(String packName) {
+        keyPredicate = keyPredicate.and(k -> Objects.equals(k.packName(), packName) );
         return this;
     }
     public PropertyQuery nameContains(String part) {
-        keyPredicate = keyPredicate.and(k -> k.getName().contains(part));
+        keyPredicate = keyPredicate.and(k -> k.propertyName().contains(part));
         return this;
     }
     public PropertyQuery nameContainsIgnoreCase(String part) {
-        keyPredicate = keyPredicate.and(k -> k.getName().toLowerCase().contains(part.toLowerCase()));
+        keyPredicate = keyPredicate.and(k -> k.propertyName().toLowerCase().contains(part.toLowerCase()));
         return this;
     }
 
@@ -82,27 +82,29 @@ public class PropertyQuery {
         return this;
     }
 
-    @Nullable public AbstractSchematicProperty pickRandomly() {
-        List<AbstractSchematicProperty> candidates = collect().values().stream().toList();
-        if (candidates.isEmpty()) { return null; }
+    @Nullable public PropertyKey pickRandomly() {
+        List<Map.Entry<PropertyKey, AbstractSchematicProperty>> candidates = new ArrayList<>( collect().entrySet() );
+        if ( candidates.isEmpty() ) { return null; }
 
-        return candidates.get( RANDOM.nextInt(candidates.size()) );
+        return candidates.get( RANDOM.nextInt(candidates.size()) ).getKey();
     }
-    @Nullable public AbstractSchematicProperty pickEnemy() {
-        List<AbstractSchematicProperty> candidates = collect().values().stream().toList();
-        if (candidates.isEmpty()) { return null; }
+    @Nullable public PropertyKey pickEnemy() {
+        List<Map.Entry<PropertyKey, AbstractSchematicProperty>> candidates = new ArrayList<>( collect().entrySet() );
+        if ( candidates.isEmpty() ) { return null; }
 
         long totalWeight = 0;
-        for (AbstractSchematicProperty s : candidates) { totalWeight += weightOf(s); }
-        if (totalWeight <= 0) { return candidates.get(RANDOM.nextInt(candidates.size())); }
+        for ( Map.Entry<PropertyKey, AbstractSchematicProperty> e : candidates ) {
+            totalWeight += weightOf( e.getValue() );
+        }
+        if ( totalWeight <= 0 ) { return candidates.get(RANDOM.nextInt(candidates.size())).getKey(); }
 
         long r = RANDOM.nextLong(totalWeight);
 
-        for (AbstractSchematicProperty s : candidates) {
-            if ( (r -= weightOf(s)) < 0) { return s; }
+        for ( Map.Entry<PropertyKey, AbstractSchematicProperty> e : candidates ) {
+            if ( (r -= weightOf( e.getValue() )) < 0 ) { return e.getKey(); }
         }
 
-        return candidates.getLast();
+        return candidates.getLast().getKey();
     }
 
     public ObjectList<PropertyKey> collectKeys() {

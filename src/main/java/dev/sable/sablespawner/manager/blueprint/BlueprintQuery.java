@@ -1,7 +1,8 @@
 package dev.sable.sablespawner.manager.blueprint;
 
 import dev.sable.sablespawner.manager.datapack.DatapackManager;
-import dev.sable.sablespawner.manager.datapack.property.sublevel.AbstractSchematicProperty;
+import dev.sable.sablespawner.manager.datapack.property.sublevel.PropertyKey;
+import it.unimi.dsi.fastutil.Pair;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import it.unimi.dsi.fastutil.objects.ObjectList;
@@ -13,10 +14,17 @@ import java.util.function.Predicate;
 public class BlueprintQuery {
 
     private final Object2ObjectOpenHashMap<BlueprintKey, BlueprintEntry> source;
+    private final Object2ObjectOpenHashMap<PropertyKey, BlueprintKey> map;
     private Predicate<BlueprintKey> keyPredicate = k -> true;
     private Predicate<BlueprintEntry> entryPredicate = e -> true;
 
-    public BlueprintQuery(Object2ObjectOpenHashMap<BlueprintKey, BlueprintEntry> source) { this.source = source; }
+    public BlueprintQuery(
+            Object2ObjectOpenHashMap<BlueprintKey, BlueprintEntry> source,
+            Object2ObjectOpenHashMap<PropertyKey, BlueprintKey> map
+    ) {
+        this.source = source;
+        this.map = map;
+    }
 
     public BlueprintQuery ofName(String name) {
         keyPredicate = keyPredicate.and(k -> Objects.equals(k.name(), name) );
@@ -36,6 +44,7 @@ public class BlueprintQuery {
         return this;
     }
 
+
     public BlueprintQuery ofSourceModId(DatapackManager.BlueprintSourceModId modId) {
         entryPredicate = entryPredicate.and(e -> e.sourceMod() == modId );
         return this;
@@ -52,7 +61,6 @@ public class BlueprintQuery {
         entryPredicate = entryPredicate.and( e -> !e.isBuffered() );
         return this;
     }
-
 
     public ObjectList<BlueprintKey> collectKeys() {
         ObjectList<BlueprintKey> result = new ObjectArrayList<>();
@@ -76,6 +84,24 @@ public class BlueprintQuery {
 
         return result;
     }
-    @Nullable public BlueprintEntry get(BlueprintKey key) { return source.get(key); }
+    @Nullable public BlueprintEntry get(BlueprintKey key) {
+        return source.get(key);
+    }
+    @Nullable public BlueprintEntry get(PropertyKey propertyKey) {
+        return source.get( map.get(propertyKey) );
+    }
+    @Nullable public Pair<Class<?>, Object> getAsObject(BlueprintKey key) {
+        BlueprintEntry entry = source.get(key);
+        if ( entry == null ) { return null; }
+        if ( entry.isBuffered() ) { return Pair.of( entry.object().getClass(), entry.object() ); }
+
+        return BlueprintLoader.loadBlueprintEntryAsObject(entry);
+    }
+    @Nullable public Pair<Class<?>, Object> getAsObject(PropertyKey propertyKey) {
+        BlueprintKey key = map.get(propertyKey);
+        if ( key == null ) { return null; }
+        return getAsObject(key);
+    }
 
 }
+

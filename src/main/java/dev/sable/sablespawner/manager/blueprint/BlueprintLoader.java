@@ -11,6 +11,7 @@ import it.unimi.dsi.fastutil.Pair;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ObjectSet;
 import net.minecraft.nbt.CompoundTag;
+import net.neoforged.fml.ModList;
 import org.slf4j.Logger;
 
 import javax.annotation.Nullable;
@@ -62,10 +63,8 @@ public final class BlueprintLoader {
         Object2ObjectOpenHashMap<PropertyKey, AbstractSchematicProperty> properties = getPropertyManager();
         if ( properties.isEmpty() ) { return map; }
 
-        Object2ObjectOpenHashMap<BlueprintKey, BlueprintEntry> registry = getBlueprintRegistry();
-
         for ( Map.Entry<PropertyKey, AbstractSchematicProperty> e : properties.entrySet() ) {
-            BlueprintKey matched = findKeyOfProperty( registry, e.getValue() );
+            BlueprintKey matched = findKeyOfProperty( e.getValue() );
 
             if ( matched == null ) {
                 getLogger().warn("未找到属性 [{}] 对应的蓝图：{}", e.getKey(), e.getValue().getSchematicName());
@@ -114,9 +113,11 @@ public final class BlueprintLoader {
             default -> null;
         };
     }
-
-    @SuppressWarnings("DataFlowIssue")
-    @Nullable private static Pair<Class<?>, Object> loadSableBlueprint(BlueprintEntry entry) {
+    @SuppressWarnings("DataFlowIssue") @Nullable private static Pair<Class<?>, Object> loadSableBlueprint(BlueprintEntry entry) {
+        if ( !getModList().isLoaded("sable_schematic_api") ) {
+            getLogger().error("缺失modid：sable_schematic_api，蓝图加载已取消");
+            return null;
+        }
         CompoundTag tag;
 
         if ( entry.hasPathReference() ) {
@@ -134,13 +135,11 @@ public final class BlueprintLoader {
         return Pair.of( SableBlueprint.class, blueprint );
     }
 
-
-    @Nullable private static BlueprintKey findKeyOfProperty(Object2ObjectOpenHashMap<BlueprintKey, BlueprintEntry> registry,
-                                                            AbstractSchematicProperty property) {
+    @Nullable private static BlueprintKey findKeyOfProperty(AbstractSchematicProperty property) {
         String name = property.getSchematicName();
         boolean isFolder = property.getSchematicSource() == DatapackManager.BlueprintSourceFileLocation.folder;
 
-        for ( Map.Entry<BlueprintKey, BlueprintEntry> e : registry.entrySet() ) {
+        for ( Map.Entry<BlueprintKey, BlueprintEntry> e : getBlueprintRegistry().entrySet() ) {
             BlueprintKey key = e.getKey();
             BlueprintEntry entry = e.getValue();
 
@@ -160,6 +159,9 @@ public final class BlueprintLoader {
         return null;
     }
 
+    private static ModList getModList() {
+        return ModList.get();
+    }
     private static Logger getLogger() {
         return SableSpawner.LOGGER;
     }
@@ -170,10 +172,10 @@ public final class BlueprintLoader {
         return SableSpawner.DATAPACK_MANAGER.getPROPERTY_MANAGER();
     }
     private static Object2ObjectOpenHashMap<BlueprintKey, BlueprintEntry> getBlueprintRegistry() {
-        return SableSpawner.BLUEPRINT_MANAGER.getBlueprintRegistry();
+        return SableSpawner.BLUEPRINT_MANAGER.getBLUEPRINT_REGISTRY();
     }
     private static Object2ObjectOpenHashMap<PropertyKey, BlueprintKey> getPropertyBlueprintMap() {
-        return SableSpawner.BLUEPRINT_MANAGER.getPropertyBlueprintMap();
+        return SableSpawner.BLUEPRINT_MANAGER.getPROPERTY_BLUEPRINT_MAP();
     }
 
 

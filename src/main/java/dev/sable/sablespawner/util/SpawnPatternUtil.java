@@ -1,6 +1,11 @@
 package dev.sable.sablespawner.util;
 
+import dev.rew1nd.sableschematicapi.blueprint.SableBlueprint;
+import dev.rew1nd.sableschematicapi.survival.BlueprintPlacementPlan;
 import dev.ryanhcode.sable.companion.math.Pose3d;
+import dev.sable.sablespawner.SableSpawner;
+import dev.sable.sablespawner.spawn.session.entry.SpawnTicket;
+import it.unimi.dsi.fastutil.Pair;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import it.unimi.dsi.fastutil.objects.ObjectList;
 import org.joml.Quaterniond;
@@ -83,6 +88,57 @@ public final class SpawnPatternUtil {
 
         return generateSpacePattern(pattern, spacing, amount, playerPos, distance, orientation);
     }
+
+
+    public static ObjectList<BlueprintPlacementPlan> newSableBlueprintPlacementPlan( SpawnTicket ticket, Vector3d playerPos ) {
+        if ( ticket == null ) { return new ObjectArrayList<>(); }
+
+        Pair<Class<?>, Object> result = SableSpawner.BLUEPRINT_MANAGER.query().getAsObject( ticket.propertyKey() );
+        if ( result == null || !(result.right() instanceof SableBlueprint blueprint) ) { return new ObjectArrayList<>(); }
+
+        double spacing = getSpacing(blueprint);
+        if ( spacing <= 0 ) { return new ObjectArrayList<>(); }
+
+        ObjectList<Pose3d> poses = generateRandomSpacePattern(
+                spacing,
+                ticket.amount(),
+                playerPos,
+                ticket.distanceFromTarget()
+        );
+        if ( poses == null || poses.isEmpty() ) { return new ObjectArrayList<>(); }
+
+        ObjectList<BlueprintPlacementPlan> plans = new ObjectArrayList<>( poses.size() );
+        for ( Pose3d pose : poses ) {
+            plans.add( BlueprintPlacementPlan.forPose(blueprint, pose) );
+        }
+        return plans;
+    }
+
+    public static double spacingOf(Pair<Class<?>, Object> objectPair) {
+        if ( objectPair == null ) { return -1; }
+
+        Class<?> type = objectPair.left();
+        Object object = objectPair.right();
+
+        if ( type == SableBlueprint.class ) {
+            return getSpacing( (SableBlueprint) object );
+        }
+        // 未来支持的蓝图类型
+
+        return -1;
+    }
+    public static double getSpacing(SableBlueprint blueprint) {
+        if ( blueprint == null ) { return -1; }
+
+        double maxDimension = Math.max(
+                blueprint.canonicalBounds().size().x,
+                Math.max(
+                        blueprint.canonicalBounds().size().y,
+                        blueprint.canonicalBounds().size().z )
+        );
+        return maxDimension * 1.1;
+    }
+
 
     private static Vector3d parseOrigin(Vector3d playerPos, double distanceFromTarget, Quaterniond orientationFromTarget) {
         Vector3d normal = orientationFromTarget.transform(new Vector3d(0, 0, 1)).normalize();

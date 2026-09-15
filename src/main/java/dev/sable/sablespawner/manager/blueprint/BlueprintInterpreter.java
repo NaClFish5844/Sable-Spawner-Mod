@@ -4,13 +4,9 @@ import dev.sable.sablespawner.SableSpawner;
 import dev.sable.sablespawner.manager.datapack.DatapackManager;
 import dev.sable.sablespawner.manager.datapack.DatapackSource;
 import dev.sable.sablespawner.manager.datapack.property.sublevel.AbstractSchematicProperty;
-import dev.sable.sablespawner.manager.datapack.property.sublevel.PropertyKey;
 import dev.sable.sablespawner.util.FileIOUtil;
-import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
-import it.unimi.dsi.fastutil.objects.ObjectSet;
-import net.neoforged.fml.ModList;
+import it.unimi.dsi.fastutil.objects.ObjectCollection;
 import net.neoforged.fml.loading.FMLPaths;
-import org.slf4j.Logger;
 
 import javax.annotation.Nullable;
 import java.nio.file.Path;
@@ -20,12 +16,8 @@ public final class BlueprintInterpreter {
 
     public static DatapackManager.BlueprintSourceModId interpretBlueprintSource(BlueprintEntry entry, @Nullable DatapackManager.BlueprintSourceModId ignore) {
 
-        if ( entry.hasPathReference() ) {
-            return interpretBlueprintSource(entry.path(), ignore);
-        }
-        if ( entry.hasDatapackPathReference() ) {
-            return interpretBlueprintSource(entry.datapackSource(), entry.path(), ignore);
-        }
+        if ( entry.hasPathReference() ) { return interpretBlueprintSource(entry.path(), ignore); }
+        if ( entry.hasDatapackPathReference() ) { return interpretBlueprintSource(entry.datapackSource(), entry.path(), ignore); }
 
         return DatapackManager.BlueprintSourceModId.invalid;
     }
@@ -70,7 +62,12 @@ public final class BlueprintInterpreter {
         String packName = datapack.getPackMeta().packName();
         String fileName = getFileName(path);
 
-        for ( AbstractSchematicProperty property : getPropertyManager().values() ) {
+        ObjectCollection<AbstractSchematicProperty> source =
+                getDatapackManager().propertyQuery()
+                        .ofPackName(packName)
+                        .collect().values();
+
+        for ( AbstractSchematicProperty property : source ) {
             if ( property.getSchematicSource() != DatapackManager.BlueprintSourceFileLocation.datapack ) { continue; }
             if ( !Objects.equals( property.getPackName(), packName ) ) { continue; }
             if ( !Objects.equals( property.getSchematicName(), fileName ) ) { continue; }
@@ -92,23 +89,13 @@ public final class BlueprintInterpreter {
         int slash = path.lastIndexOf('/');
         return slash >= 0 ? path.substring(slash + 1) : path;
     }
-    private static ModList getModList() {
-        return ModList.get();
-    }
+
     private static Path getGameDir() {
         return FMLPaths.GAMEDIR.get();
-    }
-    private static Logger getLogger() {
-        return SableSpawner.LOGGER;
     }
     private static Path getSableSchematicApiFolder() {
         return getGameDir().resolve("Sable-Schematics");
     }
-    private static ObjectSet<DatapackSource> getDatapackRegistry() {
-        return SableSpawner.DATAPACK_MANAGER.getDATAPACK_REGISTRY();
-    }
-    private static Object2ObjectOpenHashMap<PropertyKey, AbstractSchematicProperty> getPropertyManager() {
-        return SableSpawner.DATAPACK_MANAGER.getPROPERTY_MANAGER();
-    }
+    private static DatapackManager getDatapackManager() { return SableSpawner.DATAPACK_MANAGER; }
 
 }

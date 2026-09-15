@@ -9,7 +9,6 @@ import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ObjectArraySet;
 import it.unimi.dsi.fastutil.objects.ObjectSet;
 import lombok.Getter;
-import lombok.Setter;
 import net.neoforged.fml.ModList;
 import net.neoforged.fml.loading.FMLPaths;
 import org.slf4j.Logger;
@@ -18,7 +17,7 @@ import javax.annotation.Nullable;
 import java.nio.file.Path;
 
 
-@Getter @Setter
+@Getter
 public class DatapackManager {
     public static final DatapackManager INSTANCE = new DatapackManager();
 
