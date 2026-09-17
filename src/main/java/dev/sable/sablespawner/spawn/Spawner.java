@@ -13,17 +13,9 @@ import dev.sable.sablespawner.manager.datapack.property.config.WorldConfig;
 import dev.sable.sablespawner.manager.datapack.property.sublevel.*;
 import dev.ryanhcode.sable.companion.math.BoundingBox3d;
 import it.unimi.dsi.fastutil.Pair;
-import net.minecraft.nbt.CompoundTag;
-import net.minecraft.nbt.NbtAccounter;
-import net.minecraft.nbt.NbtIo;
-import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
-import net.minecraft.server.packs.resources.Resource;
 import org.jetbrains.annotations.Nullable;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.nio.file.Path;
 import java.util.*;
 
 public class Spawner {
@@ -57,19 +49,14 @@ public class Spawner {
         return true;
     }
 
-    public @Nullable ServerSubLevel spawnSublevelAs(PropertyKey propertyKey, ServerLevel level, BlueprintPlacementPlan plan) {
+    public @Nullable ServerSubLevel spawnSublevelWithName(PropertyKey propertyKey, ServerLevel level, BlueprintPlacementPlan plan) {
         AbstractSchematicProperty property = getDatapackManager().propertyQuery().get(propertyKey);
-        if ( property == null ) { return null; }
+        if ( property == null || Container == null ) { return null; }
 
-        return switch ( propertyKey.type() ) {
-            case enemy, ally, prefab -> spawnAndName(propertyKey, property, level, plan);
-            default -> null;
-        };
-    }
+        Map<UUID, UUID> result = spawnSublevel(propertyKey, level, plan);
 
-    private @Nullable ServerSubLevel spawnAndName(PropertyKey propertyKey, AbstractSchematicProperty property, ServerLevel level, BlueprintPlacementPlan plan) {
-        if ( Container == null ) { return null; }
-        return applyName( spawnSublevel(propertyKey, level, plan), property );
+        return applyName(result, property);
+
     }
     private @Nullable ServerSubLevel applyName(@Nullable Map<UUID, UUID> result, AbstractSchematicProperty property) {
         if (result == null || result.isEmpty()) { return null; }
@@ -83,7 +70,6 @@ public class Spawner {
 
         return spawnedSublevel;
     }
-
     public @Nullable Map<UUID, UUID> spawnSublevel(PropertyKey propertyKey, ServerLevel level, BlueprintPlacementPlan plan) {
         Pair<Class<?>, Object> blueprintObject = getBlueprintManager().query().getAsObject(propertyKey);
 
@@ -117,6 +103,7 @@ public class Spawner {
         };
         return prefix + randomName();
     }
+
 
     private static DatapackManager getDatapackManager() {
         return SableSpawner.DATAPACK_MANAGER;

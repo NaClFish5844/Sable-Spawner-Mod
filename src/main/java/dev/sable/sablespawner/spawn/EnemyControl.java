@@ -8,7 +8,6 @@ import dev.sable.sablespawner.SableSpawner;
 import dev.sable.sablespawner.SableSpawnerConfig;
 import dev.sable.sablespawner.manager.datapack.DatapackManager;
 import dev.sable.sablespawner.manager.datapack.property.config.WorldConfig;
-import dev.sable.sablespawner.manager.datapack.property.sublevel.EnemyProperty;
 import dev.sable.sablespawner.manager.datapack.property.sublevel.PropertyKey;
 import dev.sable.sablespawner.player.PlayerManager;
 import dev.sable.sablespawner.player.PlayerStatus;
@@ -135,7 +134,7 @@ public class EnemyControl {
         ObjectList<ServerSubLevel> buffer = new ObjectArrayList<>();
 
         for ( BlueprintPlacementPlan plan : placementPlans ) {
-            ServerSubLevel spawnedSubLevel = SPAWNER.spawnSublevelAs( propertyKey, LEVEL, plan );
+            ServerSubLevel spawnedSubLevel = SPAWNER.spawnSublevelWithName( propertyKey, LEVEL, plan );
             buffer.add(spawnedSubLevel);
 
             if ( spawnedSubLevel == null ) {

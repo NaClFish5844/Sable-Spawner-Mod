@@ -1,5 +1,6 @@
 package dev.sable.sablespawner;
 
+import dev.sable.sablespawner.manager.DataManager;
 import dev.sable.sablespawner.manager.blueprint.BlueprintManager;
 import dev.sable.sablespawner.player.PlayerManager;
 import dev.sable.sablespawner.spawn.GlobalControl;
@@ -51,8 +52,7 @@ public class SableSpawner {
         NeoForge.EVENT_BUS.register(PLAYER_MANAGER);
         NeoForge.EVENT_BUS.register(GLOBAL_CONTROLLER);
 
-        // DATAPACK_MANAGER.reloadDatapack();
-        // DATAPACK_MANAGER.reloadBlueprint();
+        DataManager.reloadAll();
 
         LOGGER.info("SableSpawner server starting");
     }

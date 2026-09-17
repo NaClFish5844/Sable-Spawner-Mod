@@ -53,7 +53,7 @@ public final class DatapackLoader {
         if ( object == null ) { return defaultConfig; }
 
         if ( DatapackChecker.checkDefaultWorldConfigFormat(object) ) {
-            defaultConfig.setWorldLevel( DatapackChecker.getNoDuplicatedSortedArrList(object.get("level")) );
+            defaultConfig.setWorldLevel( DatapackChecker.getNoDuplicatedSortedArrList(object.get("levels")) );
             defaultConfig.setEnemyPrefix( object.get("enemy_prefix").getAsString() );
             defaultConfig.setAllyPrefix( object.get("ally_prefix").getAsString() );
             defaultConfig.setNeutralPrefix( object.get("neutral_prefix").getAsString() );
