@@ -1,0 +1,31 @@
+{
+  "sablespawner.command.reload.all": "重载全部数据完成，加载 %s 个数据包与 %s 个蓝图，用时 %s ms",
+  "sablespawner.command.reload.datapack": "重载全部数据完成，加载 %s 个数据包，用时 %s ms",
+  "sablespawner.command.reload.blueprint": "重载全部数据完成，加载 %s 个蓝图，用时 %s ms",
+
+  "sablespawner.command.worldconfig.not_found": "未查找到 %s 的世界配置",
+  "sablespawner.command.worldconfig.levels": "世界等级：%s",
+  "sablespawner.command.worldconfig.prefix": "敌方=\"%s\"，友方=\"%s\"，中立=\"%s\"",
+
+  "sablespawner.command.defaultconfig.not_found": "未查找到默认配置，建议执行 /sablespawner reload datapack 或进行排查",
+  "sablespawner.command.defaultconfig.levels": "默认世界等级：%s",
+  "sablespawner.command.defaultconfig.prefix": "默认敌方=\"%s\"，默认友方=\"%s\"，默认中立=\"%s\"",
+
+  "sablespawner.command.player.not_found": "未查找到此玩家的状态： %s",
+  "sablespawner.command.protection.get_expire_time": "%s 的保护时间剩余 %s ticks",
+  "sablespawner.command.protection.set": "已为 %s 设置保护",
+  "sablespawner.command.protection.set_time": "已为 %s 设置保护，持续 %s ticks",
+  "sablespawner.command.protection.remove": "已为 %s 移除保护",
+  "sablespawner.command.invalid_amount": "请输入数值",
+
+  "sablespawner.command.score.get": "%s 的世界分数为：%s ，当前世界中等级为 %s",
+  "sablespawner.command.score.get_no_level": "%s 的世界分数为：%s",
+  "sablespawner.command.score.add": "为 %s 增加了 %s 分（当前：%s 分）",
+  "sablespawner.command.score.sub": "为 %s 减少了 %s 分（当前：%s 分）",
+  "sablespawner.command.score.set": "将 %s 的分数设置为 %s",
+  "sablespawner.command.score.invalid": "设置失败",
+  "sablespawner.command.score.out_of_range": "设置失败，请输入合理值（0-%s）",
+
+  "sablespawner.command.debug.done": "已将寄存器的值输出到日志",
+  "sablespawner.command.debug.no_controller": "该维度没有控制器：%s"
+}

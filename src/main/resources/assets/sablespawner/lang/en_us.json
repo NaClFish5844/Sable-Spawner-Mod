@@ -8,5 +8,35 @@
   "sablespawner.configuration.spawn_min_distance": "Minimum Spawn Distance",
   "sablespawner.configuration.spawn_max_distance": "Maximum Spawn Distance",
   "sablespawner.configuration.blueprint_folder": "Blueprint Folder",
-  "sablespawner.configuration.enemy_name_keyword": "Enemy Name Keyword"
+  "sablespawner.configuration.enemy_name_keyword": "Enemy Name Keyword",
+
+  "sablespawner.command.reload.all": "Reload complete: %s datapacks, %s blueprints, took %s ms",
+  "sablespawner.command.reload.datapack": "Reload complete: %s datapacks, took %s ms",
+  "sablespawner.command.reload.blueprint": "Reload complete: %s blueprints, took %s ms",
+
+  "sablespawner.command.worldconfig.not_found": "No world config found for %s",
+  "sablespawner.command.worldconfig.levels": "World levels: %s",
+  "sablespawner.command.worldconfig.prefix": "Enemy=\"%s\", Ally=\"%s\", Neutral=\"%s\"",
+
+  "sablespawner.command.defaultconfig.not_found": "Default config not found; try /sablespawner reload datapack or check your setup",
+  "sablespawner.command.defaultconfig.levels": "Default world levels: %s",
+  "sablespawner.command.defaultconfig.prefix": "Default Enemy=\"%s\", Ally=\"%s\", Neutral=\"%s\"",
+
+  "sablespawner.command.player.not_found": "Player status not found: %s",
+  "sablespawner.command.protection.get_expire_time": "%s has %s ticks of protection left",
+  "sablespawner.command.protection.set": "Protection set for %s",
+  "sablespawner.command.protection.set_time": "Protection set for %s for %s ticks",
+  "sablespawner.command.protection.remove": "Protection removed for %s",
+  "sablespawner.command.invalid_amount": "Please enter a number",
+
+  "sablespawner.command.score.get": "%s's score: %s, current world level: %s",
+  "sablespawner.command.score.get_no_level": "%s's score: %s",
+  "sablespawner.command.score.add": "%s gained %s points (now: %s)",
+  "sablespawner.command.score.sub": "%s lost %s points (now: %s)",
+  "sablespawner.command.score.set": "Set %s's score to %s",
+  "sablespawner.command.score.invalid": "Update failed",
+  "sablespawner.command.score.out_of_range": "Update failed: please enter a valid value (0-%s)",
+
+  "sablespawner.command.debug.done": "Register contents written to the log",
+  "sablespawner.command.debug.no_controller": "No controller for dimension: %s"
 }
