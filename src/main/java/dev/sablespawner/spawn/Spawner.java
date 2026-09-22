@@ -9,6 +9,7 @@ import dev.ryanhcode.sable.sublevel.ServerSubLevel;
 import dev.sablespawner.SableSpawner;
 import dev.sablespawner.manager.blueprint.BlueprintManager;
 import dev.sablespawner.manager.datapack.DatapackManager;
+import dev.sablespawner.manager.datapack.property.config.DefaultConfig;
 import dev.sablespawner.manager.datapack.property.config.WorldConfig;
 import dev.sablespawner.manager.datapack.property.sublevel.*;
 import dev.ryanhcode.sable.companion.math.BoundingBox3d;
@@ -94,12 +95,13 @@ public class Spawner {
         return builder.toString();
     }
     private String nameBuilder(AbstractSchematicProperty prop) {
-        if ( getWorldConfig(this.level) == null || prop.getSublevelType() == null ) { return randomName(); }
+        WorldConfig config = getWorldConfig(this.level);
+        if ( prop.getSublevelType() == null ) { return randomName(); }
 
         String prefix = switch (prop.getSublevelType()) {
-            case enemy -> getWorldConfig(this.level).getEnemyPrefix();
-            case ally -> getWorldConfig(this.level).getAllyPrefix();
-            default -> getWorldConfig(this.level).getNeutralPrefix();
+            case enemy -> config.getEnemyPrefix();
+            case ally -> config.getAllyPrefix();
+            default -> config.getNeutralPrefix();
         };
         return prefix + randomName();
     }
@@ -112,6 +114,16 @@ public class Spawner {
         return SableSpawner.BLUEPRINT_MANAGER;
     }
     private static WorldConfig getWorldConfig(ServerLevel level) {
-        return getDatapackManager().worldConfigQuery().ofDimension(level).collect();
+        WorldConfig config = getDatapackManager()
+                .worldConfigQuery()
+                .ofDimension(level)
+                .collect();
+
+        if ( config == null ) {
+            config = WorldConfig.of( getDatapackManager().getDEFAULT_CONFIG(), null, WorldConfig.Pattern.invalid );
+        }
+
+        return config;
     }
+
 }

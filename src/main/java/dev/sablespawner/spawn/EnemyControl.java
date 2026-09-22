@@ -7,6 +7,7 @@ import dev.ryanhcode.sable.sublevel.ServerSubLevel;
 import dev.sablespawner.SableSpawner;
 import dev.sablespawner.SableSpawnerConfig;
 import dev.sablespawner.manager.datapack.DatapackManager;
+import dev.sablespawner.manager.datapack.property.config.DefaultConfig;
 import dev.sablespawner.manager.datapack.property.config.WorldConfig;
 import dev.sablespawner.manager.datapack.property.sublevel.PropertyKey;
 import dev.sablespawner.player.PlayerManager;
@@ -21,6 +22,7 @@ import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import it.unimi.dsi.fastutil.objects.ObjectList;
 import lombok.Getter;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.phys.AABB;
@@ -48,7 +50,15 @@ public class EnemyControl {
         this.ENEMY_TRACKER = new EnemySubLevelTracker();
         this.SPAWN_QUEUE = new SpawnQueue(level);
     }
+    public void rebind(ServerLevel level) {
+        this.LEVEL = level;
+        this.CONTAINER = SubLevelContainer.getContainer(level);
+        this.SPAWNER = new Spawner(level);
+        this.SPAWN_QUEUE = new SpawnQueue(level);
 
+        ENEMY_TRACKER.getEntries().values().removeIf( entry -> !entry.rebind(CONTAINER) );
+        // 如果失去绑定的话 会出现清不掉的碎片 这很危险
+    }
 
     public void callScan() { // keep running
         SPAWN_QUEUE.updateQueue();
@@ -179,6 +189,9 @@ public class EnemyControl {
         }
     }
 
+    public boolean isLevelActive() {
+        return getServer().getLevel(LEVEL.dimension()) == LEVEL;
+    }
     public boolean isSpawnerActive(){
         return !LEVEL.getPlayers(p -> !p.isSpectator(), 1).isEmpty();
     }
@@ -263,12 +276,19 @@ public class EnemyControl {
 
 
     private long getGameTime() { return SableSpawner.SERVER.overworld().getGameTime(); }
+    private MinecraftServer getServer() { return SableSpawner.SERVER; }
     private DatapackManager getDatapackManager() { return SableSpawner.DATAPACK_MANAGER; }
     private WorldConfig getWorldConfig() {
-        return SableSpawner.DATAPACK_MANAGER
+        WorldConfig config = getDatapackManager()
                 .worldConfigQuery()
                 .ofDimension(LEVEL)
                 .collect();
+
+        if ( config == null ) {
+            config = WorldConfig.of( getDatapackManager().getDEFAULT_CONFIG(), null, WorldConfig.Pattern.invalid );
+        }
+
+        return config;
     }
     private PlayerManager getPlayerManager() { return SableSpawner.PLAYER_MANAGER; }
 

@@ -8,49 +8,41 @@ import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.neoforge.event.level.LevelEvent;
 import net.neoforged.neoforge.event.tick.ServerTickEvent;
 
-import java.util.ArrayList;
-import java.util.List;
-
 import static dev.sablespawner.SableSpawnerConfig.SCAN_INTERVAL;
 
 public class GlobalControl {
     public static final GlobalControl INSTANCE = new GlobalControl();
 
-    public ArrayList<String> LEVELS = new ArrayList<>(List.of("deepspace:space"));
     public Object2ObjectOpenHashMap<String, EnemyControl> CONTROLLERS = new Object2ObjectOpenHashMap<>();
-
 
     @SubscribeEvent
     public void onLevelLoad(LevelEvent.Load event){
         if ( !( event.getLevel() instanceof ServerLevel level ) ) { return; }
 
         String dim = level.dimension().location().toString();
-        if (LEVELS.contains(dim) && !CONTROLLERS.containsKey(dim) ) { CONTROLLERS.put(dim, new EnemyControl(level)); }
-    }
-
-    @SubscribeEvent
-    public void onLevelUnload(LevelEvent.Unload event) {
-        if ( !( event.getLevel() instanceof ServerLevel level ) ) { return; }
-
-        String dim = level.dimension().location().toString();
-        CONTROLLERS.remove(dim);
+        EnemyControl controller = CONTROLLERS.get(dim);
+        if ( controller != null ) { controller.rebind(level); }
+        else { CONTROLLERS.put(dim, new EnemyControl(level)); }
     }
 
     @SubscribeEvent
     public void onServerTick(ServerTickEvent.Post event){
         if ( getGameTime() % SCAN_INTERVAL.getAsInt() == 0) {
             for ( EnemyControl controller :CONTROLLERS.values() ){
+                if ( !controller.isLevelActive() ) { continue; }
                 controller.callScan();
             }
         }
         if ( getGameTime() % 5 == 0) {
             for ( EnemyControl controller :CONTROLLERS.values() ){
-                if ( controller.isSpawnerActive() ) { controller.callPer5Tick(); }
+                if ( !controller.isLevelActive() || !controller.isSpawnerActive() ) { continue; }
+                controller.callPer5Tick();
             }
         }
 
         for ( EnemyControl controller :CONTROLLERS.values() ){
-            if ( controller.isSpawnerActive() ) { controller.callPerTick(); }
+            if ( !controller.isLevelActive() || !controller.isSpawnerActive() ) { continue; }
+            controller.callPerTick();
         }
     }
 

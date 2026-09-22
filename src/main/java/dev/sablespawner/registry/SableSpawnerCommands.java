@@ -2,7 +2,6 @@ package dev.sablespawner.registry;
 
 import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.arguments.LongArgumentType;
-import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
@@ -27,8 +26,10 @@ import dev.sablespawner.spawn.session.entry.SpawnTicket;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import it.unimi.dsi.fastutil.objects.ObjectList;
 import net.minecraft.commands.CommandSourceStack;
+import net.minecraft.commands.arguments.DimensionArgument;
 import net.minecraft.commands.arguments.EntityArgument;
 import net.minecraft.network.chat.Component;
+import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.neoforged.bus.api.SubscribeEvent;
@@ -140,14 +141,17 @@ public final class SableSpawnerCommands {
                         .then(literal("controllers").executes(SableSpawnerCommands::debugControllers))
                         .then(literal("playerTracker").executes(SableSpawnerCommands::debugPlayerTracker))
                         .then(literal("spawnQueue")
-                                .then(argument("dim", StringArgumentType.word())
-                                        .executes(ctx -> debugSpawnQueue(ctx, StringArgumentType.getString(ctx, "dim")))))
+                                .executes(ctx -> debugSpawnQueue(ctx, currentDimension(ctx)))
+                                .then(argument("dimension", DimensionArgument.dimension())
+                                        .executes(ctx -> debugSpawnQueue(ctx, dimensionArg(ctx, "dim")))))
                         .then(literal("enemyTracker")
-                                .then(argument("dim", StringArgumentType.word())
-                                        .executes(ctx -> debugEnemyTracker(ctx, StringArgumentType.getString(ctx, "dim")))))
+                                .executes(ctx -> debugEnemyTracker(ctx, currentDimension(ctx)))
+                                .then(argument("dimension", DimensionArgument.dimension())
+                                        .executes(ctx -> debugEnemyTracker(ctx, dimensionArg(ctx, "dim")))))
                         .then(literal("debrisTracker")
-                                .then(argument("dim", StringArgumentType.word())
-                                        .executes(ctx -> debugDebrisTracker(ctx, StringArgumentType.getString(ctx, "dim")))));
+                                .executes(ctx -> debugDebrisTracker(ctx, currentDimension(ctx)))
+                                .then(argument("dimension", DimensionArgument.dimension())
+                                        .executes(ctx -> debugDebrisTracker(ctx, dimensionArg(ctx, "dim")))));
             }
 
     private static int reload(CommandContext<CommandSourceStack> ctx, String field) {
@@ -410,7 +414,7 @@ public final class SableSpawnerCommands {
         getLogger().info("全局控制器：{} 个控制器，下次冷扫描：{} tick后 | Global controllers: {} controllers, next scan in {} ticks",
                 controllers.size(), nextScan, controllers.size(), nextScan);
         for (Map.Entry<String, EnemyControl> e : controllers.entrySet()) {
-            getLogger().info("\t{} : 活跃={}", e.getKey(), e.getValue().isSpawnerActive() ? "是" : "否");
+            getLogger().info("\t{} : 活跃={}", e.getKey(), e.getValue().isSpawnerActive());
         }
         return success(ctx, "sablespawner.command.debug.done");
     }
@@ -425,7 +429,7 @@ public final class SableSpawnerCommands {
             boolean fighting = controller != null && controller.isEnemyNearby(player);
 
             getLogger().info("\t[{}] {}：保护时间={}，正在交战={}",
-                    dim, player.getScoreboardName(), status.getProtectionExpireTime(), fighting ? "是" : "否");
+                    dim, player.getScoreboardName(), status.getProtectionExpireTime(), fighting);
         }
         return success(ctx, "sablespawner.command.debug.done");
     }
@@ -464,7 +468,7 @@ public final class SableSpawnerCommands {
             getLogger().info("\t{}-{}：生成时间={}，总质量={}，剩余质量={}（{}%），剩余撤离时间={}，超光速充能剩余时间={}",
                     shortUuid(entry.getUuid()), shipName(entry),
                     entry.getSpawnedGameTick(),
-                    formatMass(entry.getTotalMass()), formatMass(entry.getRemainingMass()), formatMass(entry.getMassPercentage()),
+                    formatDouble(entry.getTotalMass()), formatDouble(entry.getRemainingMass()), formatDouble(entry.getMassPercentage()),
                     property.getLifeTime() - (gameTime - entry.getSpawnedGameTick()),
                     ftlRemain);
         }
@@ -491,7 +495,7 @@ public final class SableSpawnerCommands {
 
             getLogger().info("\t{}：碎片源={}，生成时间={}，质量={}",
                     shortUuid(entry.getUuid()), source,
-                    entry.getSpawnedGameTick(), formatMass(entry.getRemainingMass()));
+                    entry.getSpawnedGameTick(), formatDouble(entry.getRemainingMass()));
         }
         return success(ctx, "sablespawner.command.debug.done");
     }
@@ -519,7 +523,7 @@ public final class SableSpawnerCommands {
         String name = entry.getSublevel().getName();
         return name == null ? "未命名" : name;
     }
-    private static String formatMass(double value) {
+    private static String formatDouble(double value) {
         return String.format("%.2f", value);
     }
     private static String playerName(UUID uuid) {
@@ -536,6 +540,12 @@ public final class SableSpawnerCommands {
     }
     private static long getGameTime() {
         return SableSpawner.SERVER.overworld().getGameTime();
+    }
+    private static String currentDimension(CommandContext<CommandSourceStack> ctx) {
+        return ctx.getSource().getLevel().dimension().location().toString();
+    }
+    private static String dimensionArg(CommandContext<CommandSourceStack> ctx, String name) {
+        return ctx.getArgument(name, ResourceLocation.class).toString();
     }
 
     private static DatapackManager getDatapackManager() {

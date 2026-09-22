@@ -1,9 +1,11 @@
 package dev.sablespawner.spawn.session.entry;
 
+import dev.ryanhcode.sable.api.sublevel.ServerSubLevelContainer;
 import dev.ryanhcode.sable.sublevel.ServerSubLevel;
 import dev.sablespawner.SableSpawner;
 import dev.sablespawner.manager.datapack.property.sublevel.EnemyProperty;
 import lombok.Getter;
+import lombok.Setter;
 
 import javax.annotation.Nullable;
 
@@ -15,7 +17,7 @@ import java.util.UUID;
 
 public class EnemySubLevelEntry {
     @Getter private final UUID uuid;
-    @Getter private final ServerSubLevel sublevel;
+    @Getter @Setter private ServerSubLevel sublevel;
     @Nullable @Getter private final EnemyProperty property;
     @Nullable @Getter private final UUID target;
     @Getter private double totalMass = -1;
@@ -56,6 +58,15 @@ public class EnemySubLevelEntry {
 
     public void removeSubLevel() {
         this.sublevel.markRemoved();
+    }
+    public boolean rebind(@Nullable ServerSubLevelContainer container) {
+        if ( container == null ) { return false; }
+
+        ServerSubLevel fresh = (ServerSubLevel) container.getSubLevel(this.uuid);
+        if ( fresh == null ) { return false; }
+
+        this.sublevel = fresh;
+        return true;
     }
 
     public boolean isFTLCharging() {

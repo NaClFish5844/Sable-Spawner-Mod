@@ -35,7 +35,11 @@ public class SableSpawner {
     public SableSpawner(IEventBus modEventBus, ModContainer modContainer) {
         PlayerDataAttachment.ATTACHMENT_TYPES.register(modEventBus);
         modEventBus.addListener(this::commonSetup);
+
         NeoForge.EVENT_BUS.register(this);
+        NeoForge.EVENT_BUS.register(PLAYER_MANAGER);
+        NeoForge.EVENT_BUS.register(GLOBAL_CONTROLLER);
+
         modContainer.registerConfig(ModConfig.Type.SERVER, SableSpawnerConfig.SPEC);
     }
 
@@ -47,9 +51,6 @@ public class SableSpawner {
     @SubscribeEvent
     public void onServerStarting(ServerStartingEvent event) {
         SERVER = event.getServer();
-
-        NeoForge.EVENT_BUS.register(PLAYER_MANAGER);
-        NeoForge.EVENT_BUS.register(GLOBAL_CONTROLLER);
 
         DataManager.reloadAll();
 
