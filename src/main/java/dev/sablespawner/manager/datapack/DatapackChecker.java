@@ -84,10 +84,10 @@ public final class DatapackChecker {
     }
     public static WorldConfigCheckResult checkWorldConfigNullableFormat(JsonObject object) {
 
-        boolean isWorldLevelValid = true;
-        boolean isEnemyPrefixValid = true;
-        boolean isAllyPrefixValid = true;
-        boolean isNeutralPrefixValid = true;
+        boolean isWorldLevelValid = false;
+        boolean isEnemyPrefixValid = false;
+        boolean isAllyPrefixValid = false;
+        boolean isNeutralPrefixValid = false;
 
         if ( object.has("world_level") ) {
             isWorldLevelValid = checkNumberArrListSorted("world_level", object);
@@ -252,7 +252,8 @@ public final class DatapackChecker {
         }
         return true;
     }
-    public static boolean checkDimensionKey( String key, JsonElement element ) {
+    public static boolean checkDimensionKey( String key, JsonObject root ) {
+        JsonElement element = root.get(key);
         if ( !isString(key, element) ) { return false; }
         if ( ResourceLocation.tryParse( element.getAsString() ) == null ) {
             getLogger().warn("[{}] 不是合法的维度标识（应为 namespace:dim，如 deepspace:space） | [{}] invalid dimension id (expected namespace:dim, e.g. deepspace:space)", key, key);

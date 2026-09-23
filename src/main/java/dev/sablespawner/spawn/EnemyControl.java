@@ -3,11 +3,13 @@ package dev.sablespawner.spawn;
 import dev.rew1nd.sableschematicapi.survival.BlueprintPlacementPlan;
 import dev.ryanhcode.sable.api.sublevel.ServerSubLevelContainer;
 import dev.ryanhcode.sable.api.sublevel.SubLevelContainer;
+import dev.ryanhcode.sable.api.sublevel.SubLevelObserver;
 import dev.ryanhcode.sable.sublevel.ServerSubLevel;
+import dev.ryanhcode.sable.sublevel.SubLevel;
+import dev.ryanhcode.sable.sublevel.storage.SubLevelRemovalReason;
 import dev.sablespawner.SableSpawner;
 import dev.sablespawner.SableSpawnerConfig;
 import dev.sablespawner.manager.datapack.DatapackManager;
-import dev.sablespawner.manager.datapack.property.config.DefaultConfig;
 import dev.sablespawner.manager.datapack.property.config.WorldConfig;
 import dev.sablespawner.manager.datapack.property.sublevel.PropertyKey;
 import dev.sablespawner.player.PlayerManager;
@@ -29,11 +31,12 @@ import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
 import net.neoforged.fml.ModList;
 import org.joml.Vector3d;
+import org.slf4j.Logger;
 
 import java.util.*;
 
 @Getter
-public class EnemyControl {
+public class EnemyControl implements SubLevelObserver {
     ServerLevel LEVEL;
     ServerSubLevelContainer CONTAINER;
     Spawner SPAWNER;
@@ -43,21 +46,34 @@ public class EnemyControl {
     ObjectList<EnemySubLevelEntry> deferredEnemySubLevelEntryAppender = new ObjectArrayList<>();
     ObjectList<EnemySubLevelEntry> deferredEnemySubLevelEntryRemover = new ObjectArrayList<>();
 
-    public EnemyControl(ServerLevel level){
+    public EnemyControl(ServerLevel level, SubLevelContainer container){
         this.LEVEL = level;
-        this.CONTAINER = SubLevelContainer.getContainer(level);
-        this.SPAWNER = new Spawner(level);
+        this.CONTAINER = (ServerSubLevelContainer) container;
+        this.SPAWNER = new Spawner(level, this.CONTAINER);
         this.ENEMY_TRACKER = new EnemySubLevelTracker();
         this.SPAWN_QUEUE = new SpawnQueue(level);
     }
-    public void rebind(ServerLevel level) {
+    public void rebind(ServerLevel level, SubLevelContainer container) {
         this.LEVEL = level;
-        this.CONTAINER = SubLevelContainer.getContainer(level);
-        this.SPAWNER = new Spawner(level);
+        this.CONTAINER = (ServerSubLevelContainer) container;
+        this.SPAWNER = new Spawner(level, this.CONTAINER);
         this.SPAWN_QUEUE = new SpawnQueue(level);
 
         ENEMY_TRACKER.getEntries().values().removeIf( entry -> !entry.rebind(CONTAINER) );
-        // 如果失去绑定的话 会出现清不掉的碎片 这很危险
+
+        clearEnemyIfRestart();
+    }
+    private void clearEnemyIfRestart() {
+        if ( CONTAINER == null ) { return; }
+
+        String prefix = getWorldConfig().getEnemyPrefix();
+        for ( ServerSubLevel subLevel : CONTAINER.getAllSubLevels() ) {
+            if ( subLevel.getSplitFromSubLevel() != null ) { continue; }
+            if ( subLevel.getName() == null ) { continue; }
+            if ( !subLevel.getName().contains(prefix) ) { continue; }
+            if ( ENEMY_TRACKER.getEntries().containsKey(subLevel.getUniqueId()) ) { continue; }
+            subLevel.markRemoved();
+        }
     }
 
     public void callScan() { // keep running
@@ -96,9 +112,12 @@ public class EnemyControl {
             if ( ticket == null ) { continue; }
 
             if ( ticket.getScheduledSpawnTime( playerStatus ) <= getGameTime() ) {
+
                 for ( int i = 0; i<5 ;i++ ) {
                     if ( spawn(ticket) ) {
                         this.SPAWN_QUEUE.pop(playerUUID);
+
+                        getLogger().debug("为 {} 刷新了{}:{}", Objects.requireNonNull(LEVEL.getPlayerByUUID(playerUUID)).getDisplayName(),ticket.property().getPackName(),ticket.property().getSchematicName());
                         break;
                     }
                 }
@@ -118,6 +137,22 @@ public class EnemyControl {
             if ( entry.isExpired() ) { onShipExpired(entry); }
         }
 
+    }
+    @Override public void onSubLevelAdded(SubLevel subLevel) {
+        ServerSubLevel subLevel1 = (ServerSubLevel) subLevel;
+        if ( ENEMY_TRACKER.getEntries().containsKey(subLevel1.getUniqueId()) ) { return; }
+
+        if ( isDebrisOfEnemy(subLevel1) ) {
+            this.deferredEnemySubLevelEntryAppender.add(new EnemySubLevelEntry(null, subLevel1, null ));
+        }
+
+        executeAppend();
+    }
+    @Override public void onSubLevelRemoved(SubLevel subLevel, SubLevelRemovalReason reason) {
+        if ( reason == SubLevelRemovalReason.UNLOADED ) { return; }
+
+        UUID uuid = subLevel.getUniqueId();
+        ENEMY_TRACKER.getEntries().remove(uuid);
     }
 
     public boolean spawn(SpawnTicket ticket) {
@@ -153,6 +188,7 @@ public class EnemyControl {
                 for ( ServerSubLevel s : buffer ) {
                     if ( s != null ) { s.markRemoved(); }
                 }
+
                 this.deferredEnemySubLevelEntryAppender.clear();
                 return false;
             }
@@ -161,6 +197,7 @@ public class EnemyControl {
 
             this.deferredEnemySubLevelEntryAppender.add(entry);
         }
+
         executeAppend();
         return true;
     }
@@ -179,13 +216,18 @@ public class EnemyControl {
     }
     public boolean isDebrisOfEnemy(ServerSubLevel subLevel) {
         if ( subLevel.getSplitFromSubLevel() == null ) { return false; }
+        UUID fatherUUID = subLevel.getSplitFromSubLevel();
+
+        if ( ENEMY_TRACKER.getEntries().containsKey(subLevel.getUniqueId()) ) { return true; }
+        if ( ENEMY_TRACKER.getEntries().containsKey(fatherUUID) ) { return true; }
+
         while (true){
-            UUID fatherUUID = subLevel.getSplitFromSubLevel();
             ServerSubLevel father = (ServerSubLevel) CONTAINER.getSubLevel( fatherUUID );
             if ( father == null || father.getName() == null ) { return false; }
             if ( father.getSplitFromSubLevel() == null ) {
                 return father.getName().contains( getWorldConfig().getEnemyPrefix() );
             }
+            fatherUUID = father.getSplitFromSubLevel();
         }
     }
 
@@ -291,5 +333,8 @@ public class EnemyControl {
         return config;
     }
     private PlayerManager getPlayerManager() { return SableSpawner.PLAYER_MANAGER; }
+    private static Logger getLogger() {
+        return SableSpawner.LOGGER;
+    }
 
 }

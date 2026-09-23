@@ -31,13 +31,22 @@ public final class BlueprintLoader {
             getLogger().info("未发现数据包，跳过数据包蓝图加载 | No datapack found, skipping datapack blueprint loading");
         } else {
             for ( DatapackSource datapack : getDatapackRegistry() ) {
+                String packName = datapack.getPackMeta().packName();
                 Set<BlueprintEntry> entries = BlueprintScanner.scanBlueprintsOfPack(datapack);
 
-                if ( entries.isEmpty() ) { continue; }
+                if ( entries.isEmpty() ) {
+                    getLogger().debug("此数据包中未发现蓝图：{}", packName);
+                    continue;
+                }
                 for ( BlueprintEntry entry : entries ) {
-                    BlueprintKey key = BlueprintKey.ofEntry(entry);
+                    BlueprintKey key = BlueprintKey.ofEntry(entry, "datapack");
+                    if ( key == null ) {
+                        getLogger().debug("生成BlueprintKey失败：{}", entry.path());
+                        continue;
+                    }
 
                     reg.put(key, entry);
+                    getLogger().debug("已加载 {} -> {} 的引用", packName, key.name() );
                 }
             }
         }
@@ -48,9 +57,14 @@ public final class BlueprintLoader {
             getLogger().info("文件夹中未发现蓝图 | No blueprint found in folder");
         } else {
             for ( BlueprintEntry entry : files ) {
-                BlueprintKey key = BlueprintKey.ofEntry(entry);
+                BlueprintKey key = BlueprintKey.ofEntry(entry, "folder");
+                if ( key == null ) {
+                    getLogger().debug("生成BlueprintKey失败：{}", entry.path());
+                    continue;
+                }
 
                 reg.put(key, entry);
+                getLogger().debug("已加载文件夹中 {} 的引用", key.name() );
             }
         }
 

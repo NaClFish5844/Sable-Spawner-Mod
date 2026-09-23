@@ -9,25 +9,25 @@ import dev.ryanhcode.sable.sublevel.ServerSubLevel;
 import dev.sablespawner.SableSpawner;
 import dev.sablespawner.manager.blueprint.BlueprintManager;
 import dev.sablespawner.manager.datapack.DatapackManager;
-import dev.sablespawner.manager.datapack.property.config.DefaultConfig;
 import dev.sablespawner.manager.datapack.property.config.WorldConfig;
 import dev.sablespawner.manager.datapack.property.sublevel.*;
 import dev.ryanhcode.sable.companion.math.BoundingBox3d;
 import it.unimi.dsi.fastutil.Pair;
 import net.minecraft.server.level.ServerLevel;
 import org.jetbrains.annotations.Nullable;
+import org.slf4j.Logger;
 
 import java.util.*;
 
 public class Spawner {
 
-    private final ServerSubLevelContainer Container;
-    private final ServerLevel level;
+    private final ServerSubLevelContainer CONTAINER;
+    private final ServerLevel LEVEL;
     private final Random RANDOM = new Random();
 
-    public Spawner(ServerLevel level){
-        this.Container = SubLevelContainer.getContainer(level);
-        this.level = level;
+    public Spawner(ServerLevel level, ServerSubLevelContainer container){
+        this.LEVEL = level;
+        this.CONTAINER = container;
     }
 
     public boolean BoundBoxVacantDetection(ServerLevel level, BlueprintPlacementPlan plan) {
@@ -52,24 +52,10 @@ public class Spawner {
 
     public @Nullable ServerSubLevel spawnSublevelWithName(PropertyKey propertyKey, ServerLevel level, BlueprintPlacementPlan plan) {
         AbstractSchematicProperty property = getDatapackManager().propertyQuery().get(propertyKey);
-        if ( property == null || Container == null ) { return null; }
-
+        if ( property == null || CONTAINER == null ) {return null; }
         Map<UUID, UUID> result = spawnSublevel(propertyKey, level, plan);
 
         return applyName(result, property);
-
-    }
-    private @Nullable ServerSubLevel applyName(@Nullable Map<UUID, UUID> result, AbstractSchematicProperty property) {
-        if (result == null || result.isEmpty()) { return null; }
-
-        UUID spawnedUUID = result.values().iterator().next();
-        ServerSubLevel spawnedSublevel = (ServerSubLevel) Container.getSubLevel(spawnedUUID);
-
-        if ( spawnedSublevel == null ) { return null; }
-
-        spawnedSublevel.setName(nameBuilder(property));
-
-        return spawnedSublevel;
     }
     public @Nullable Map<UUID, UUID> spawnSublevel(PropertyKey propertyKey, ServerLevel level, BlueprintPlacementPlan plan) {
         Pair<Class<?>, Object> blueprintObject = getBlueprintManager().query().getAsObject(propertyKey);
@@ -83,6 +69,18 @@ public class Spawner {
 
         return SableBlueprintPlacer.place(level, blueprint, plan).subLevelUuidMap();
     }
+    private @Nullable ServerSubLevel applyName(@Nullable Map<UUID, UUID> result, AbstractSchematicProperty property) {
+        if (result == null || result.isEmpty()) { return null; }
+
+        UUID spawnedUUID = result.values().iterator().next();
+        ServerSubLevel spawnedSublevel = (ServerSubLevel) CONTAINER.getSubLevel(spawnedUUID);
+
+        if ( spawnedSublevel == null ) { return null; }
+
+        spawnedSublevel.setName(nameBuilder(property));
+
+        return spawnedSublevel;
+    }
 
     private String randomName() {
         StringBuilder builder = new StringBuilder(6);
@@ -95,7 +93,7 @@ public class Spawner {
         return builder.toString();
     }
     private String nameBuilder(AbstractSchematicProperty prop) {
-        WorldConfig config = getWorldConfig(this.level);
+        WorldConfig config = getWorldConfig(this.LEVEL);
         if ( prop.getSublevelType() == null ) { return randomName(); }
 
         String prefix = switch (prop.getSublevelType()) {
@@ -124,6 +122,9 @@ public class Spawner {
         }
 
         return config;
+    }
+    private static Logger getLogger() {
+        return SableSpawner.LOGGER;
     }
 
 }

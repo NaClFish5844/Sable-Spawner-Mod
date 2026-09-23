@@ -56,7 +56,6 @@ public final class BlueprintScanner {
         };
     }
 
-
     private static Path getSableSchematicApiFolder() {
         return getGameDir().resolve("Sable-Schematics");
     }

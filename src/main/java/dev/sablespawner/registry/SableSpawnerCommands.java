@@ -2,9 +2,12 @@ package dev.sablespawner.registry;
 
 import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.arguments.LongArgumentType;
+import com.mojang.brigadier.arguments.StringArgumentType;
 import com.mojang.brigadier.builder.LiteralArgumentBuilder;
 import com.mojang.brigadier.context.CommandContext;
 import com.mojang.brigadier.exceptions.CommandSyntaxException;
+import com.mojang.brigadier.suggestion.Suggestions;
+import com.mojang.brigadier.suggestion.SuggestionsBuilder;
 import dev.sablespawner.SableSpawner;
 import dev.sablespawner.manager.DataManager;
 import dev.sablespawner.manager.blueprint.BlueprintEntry;
@@ -21,11 +24,14 @@ import dev.sablespawner.player.PlayerManager;
 import dev.sablespawner.player.PlayerStatus;
 import dev.sablespawner.spawn.EnemyControl;
 import dev.sablespawner.spawn.GlobalControl;
+import dev.sablespawner.spawn.session.SpawnQueue;
 import dev.sablespawner.spawn.session.entry.EnemySubLevelEntry;
 import dev.sablespawner.spawn.session.entry.SpawnTicket;
+import dev.sablespawner.spawn.session.entry.SpawnTicketBuilder;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import it.unimi.dsi.fastutil.objects.ObjectList;
 import net.minecraft.commands.CommandSourceStack;
+import net.minecraft.commands.SharedSuggestionProvider;
 import net.minecraft.commands.arguments.DimensionArgument;
 import net.minecraft.commands.arguments.EntityArgument;
 import net.minecraft.network.chat.Component;
@@ -38,8 +44,13 @@ import net.neoforged.neoforge.event.RegisterCommandsEvent;
 import org.slf4j.Logger;
 
 import javax.annotation.Nullable;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 
 import static com.mojang.brigadier.Command.SINGLE_SUCCESS;
 import static dev.sablespawner.SableSpawnerConfig.PLAYER_PROTECTION_TIME;
@@ -125,8 +136,30 @@ public final class SableSpawnerCommands {
         private static LiteralArgumentBuilder<CommandSourceStack> debug() {
             return literal("debug")
                     .then(getRegistry())
-                    .then(getRunTime());
+                    .then(getRunTime())
+                    .then(runtime());
         }
+            private static LiteralArgumentBuilder<CommandSourceStack> runtime() {
+                return literal("runtime")
+                        .then(spawn())
+                        .then(forceFlushSpawnQueue());
+            }
+                private static LiteralArgumentBuilder<CommandSourceStack> spawn() {
+                    return literal("spawn")
+                            .then(argument("packname", StringArgumentType.string())
+                                    .suggests(SableSpawnerCommands::suggestPackNames)
+                                    .then(argument("name", StringArgumentType.string())
+                                            .suggests(SableSpawnerCommands::suggestPropertyNames)
+                                            .executes(ctx -> debugSpawn(ctx,
+                                                    ctx.getArgument("packname", String.class),
+                                                    ctx.getArgument("name", String.class)))));
+                }
+                private static LiteralArgumentBuilder<CommandSourceStack> forceFlushSpawnQueue() {
+                    return literal("forceFlushSpawnQueue")
+                            .executes(ctx -> debugForceFlushSpawnQueue(ctx, currentDimension(ctx)))
+                            .then(argument("dimension", DimensionArgument.dimension())
+                                    .executes(ctx -> debugForceFlushSpawnQueue(ctx, dimensionArg(ctx, "dimension"))));
+                }
             private static LiteralArgumentBuilder<CommandSourceStack> getRegistry() {
                 return literal("getRegistry")
                         .then(literal("blueprintRegistry").executes(ctx -> debugRegistry(ctx, "blueprint_registry")))
@@ -143,15 +176,15 @@ public final class SableSpawnerCommands {
                         .then(literal("spawnQueue")
                                 .executes(ctx -> debugSpawnQueue(ctx, currentDimension(ctx)))
                                 .then(argument("dimension", DimensionArgument.dimension())
-                                        .executes(ctx -> debugSpawnQueue(ctx, dimensionArg(ctx, "dim")))))
+                                        .executes(ctx -> debugSpawnQueue(ctx, dimensionArg(ctx, "dimension")))))
                         .then(literal("enemyTracker")
                                 .executes(ctx -> debugEnemyTracker(ctx, currentDimension(ctx)))
                                 .then(argument("dimension", DimensionArgument.dimension())
-                                        .executes(ctx -> debugEnemyTracker(ctx, dimensionArg(ctx, "dim")))))
+                                        .executes(ctx -> debugEnemyTracker(ctx, dimensionArg(ctx, "dimension")))))
                         .then(literal("debrisTracker")
                                 .executes(ctx -> debugDebrisTracker(ctx, currentDimension(ctx)))
                                 .then(argument("dimension", DimensionArgument.dimension())
-                                        .executes(ctx -> debugDebrisTracker(ctx, dimensionArg(ctx, "dim")))));
+                                        .executes(ctx -> debugDebrisTracker(ctx, dimensionArg(ctx, "dimension")))));
             }
 
     private static int reload(CommandContext<CommandSourceStack> ctx, String field) {
@@ -414,7 +447,7 @@ public final class SableSpawnerCommands {
         getLogger().info("全局控制器：{} 个控制器，下次冷扫描：{} tick后 | Global controllers: {} controllers, next scan in {} ticks",
                 controllers.size(), nextScan, controllers.size(), nextScan);
         for (Map.Entry<String, EnemyControl> e : controllers.entrySet()) {
-            getLogger().info("\t{} : 活跃={}", e.getKey(), e.getValue().isSpawnerActive());
+            getLogger().info("\t{} : 刷怪器活跃={}", e.getKey(), e.getValue().isSpawnerActive());
         }
         return success(ctx, "sablespawner.command.debug.done");
     }
@@ -441,8 +474,18 @@ public final class SableSpawnerCommands {
         getLogger().info("刷怪队列：{} 个玩家 | Spawn queue: {} players", queue.size(), queue.size());
         for (Map.Entry<UUID, SpawnTicket> e : queue.entrySet()) {
             SpawnTicket ticket = e.getValue();
-            getLogger().info("\t[{}] {}：{}x {}，延迟{}ticks",
-                    dim, playerName(e.getKey()), ticket.amount(), ticket.property().getSchematicName(), ticket.spawnDelay());
+            ServerPlayer target = SableSpawner.SERVER.getPlayerList().getPlayer(e.getKey());
+            PlayerStatus status = target == null ? null : getPlayerManager().getStatus(target);
+            long remaining = status == null ? -1 : ticket.getScheduledSpawnTime(status) - getGameTime();
+
+            getLogger().info("\t[{}] {}：{}x {}，延迟{}ticks，预计在{}tick后刷出",
+                    dim,
+                    playerName(e.getKey()),
+                    ticket.amount(),
+                    ticket.property().getSchematicName(),
+                    ticket.spawnDelay(),
+                    remaining
+            );
         }
         return success(ctx, "sablespawner.command.debug.done");
     }
@@ -499,6 +542,32 @@ public final class SableSpawnerCommands {
         }
         return success(ctx, "sablespawner.command.debug.done");
     }
+    private static int debugSpawn(CommandContext<CommandSourceStack> ctx, String packName, String propertyName) throws CommandSyntaxException {
+        ServerPlayer player = ctx.getSource().getPlayerOrException();
+        EnemyControl controller = findController(ctx, currentDimension(ctx));
+        if ( controller == null ) { return 0; }
+
+        PropertyKey key = PropertyKey.of(propertyName, packName, AbstractSchematicProperty.SublevelType.enemy);
+        SpawnTicket ticket = SpawnTicketBuilder.of(key, player.getUUID());
+
+        String display = packName + ":" + propertyName;
+        if ( ticket == null ) {
+            return fail(ctx, "sablespawner.command.debug.property_not_found", display);
+        }
+        if ( controller.spawn(ticket) ) {
+            return success(ctx, "sablespawner.command.debug.spawned", display);
+        }
+        return fail(ctx, "sablespawner.command.debug.spawn_failed", display);
+    }
+    private static int debugForceFlushSpawnQueue(CommandContext<CommandSourceStack> ctx, String dim) {
+        EnemyControl controller = findController(ctx, dim);
+        if ( controller == null ) { return 0; }
+
+        SpawnQueue queue = controller.getSPAWN_QUEUE();
+        queue.getQueue().clear();
+        queue.updateQueue();
+        return success(ctx, "sablespawner.command.debug.force_flushed");
+    }
 
     private static int success(CommandContext<CommandSourceStack> ctx, String key, Object... args) {
         ctx.getSource().sendSuccess(() -> Component.translatable(key, args), false);
@@ -546,6 +615,22 @@ public final class SableSpawnerCommands {
     }
     private static String dimensionArg(CommandContext<CommandSourceStack> ctx, String name) {
         return ctx.getArgument(name, ResourceLocation.class).toString();
+    }
+    private static CompletableFuture<Suggestions> suggestPackNames(CommandContext<CommandSourceStack> ctx, SuggestionsBuilder builder) {
+        Set<String> packs = new HashSet<>();
+        for ( PropertyKey key : getDatapackManager().propertyQuery().isEnemy().collectKeys() ) {
+            packs.add( key.packName() );
+        }
+        return SharedSuggestionProvider.suggest(packs, builder);
+    }
+    private static CompletableFuture<Suggestions> suggestPropertyNames(CommandContext<CommandSourceStack> ctx, SuggestionsBuilder builder) {
+        String packName = ctx.getArgument("packname", String.class);
+
+        List<String> names = new ArrayList<>();
+        for ( PropertyKey key : getDatapackManager().propertyQuery().isEnemy().ofPackName(packName).collectKeys() ) {
+            names.add( key.propertyName() );
+        }
+        return SharedSuggestionProvider.suggest(names, builder);
     }
 
     private static DatapackManager getDatapackManager() {

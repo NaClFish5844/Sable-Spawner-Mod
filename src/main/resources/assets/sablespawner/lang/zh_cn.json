@@ -27,5 +27,9 @@
   "sablespawner.command.score.out_of_range": "设置失败，请输入合理值（0-%s）",
 
   "sablespawner.command.debug.done": "已将寄存器的值输出到日志",
-  "sablespawner.command.debug.no_controller": "该维度没有控制器：%s"
+  "sablespawner.command.debug.no_controller": "该维度没有控制器：%s",
+  "sablespawner.command.debug.spawned": "已构造并执行刷怪：%s",
+  "sablespawner.command.debug.spawn_failed": "刷怪失败（空位/蓝图问题）：%s",
+  "sablespawner.command.debug.property_not_found": "未找到属性：%s",
+  "sablespawner.command.debug.force_flushed": "刷怪队列已刷新"
 }

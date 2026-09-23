@@ -7,12 +7,13 @@ import java.nio.file.Path;
 
 public record BlueprintKey(
         String name,
-        String fileHash
+        String fileHash,
+        String source
 ) {
-    public static BlueprintKey of(String name, String fileHash) {
-        return new BlueprintKey(name, fileHash);
+    public static BlueprintKey of(String name, String fileHash, String source) {
+        return new BlueprintKey(name, fileHash, source);
     }
-    public static BlueprintKey ofEntry(BlueprintEntry entry) {
+    public static BlueprintKey ofEntry(BlueprintEntry entry, String source) {
         String path = entry.path();
         if ( path == null ) { return null; }
 
@@ -23,10 +24,10 @@ public record BlueprintKey(
 
         if ( fileHash == null ) { return null; }
 
-        return new BlueprintKey( getFileName(path), fileHash );
+        return new BlueprintKey( getFileName(path), fileHash, source );
     }
 
-    private static String getFileName(String path) {
+    static String getFileName(String path) {
         int slash = path.lastIndexOf('/');
         return slash >= 0 ? path.substring(slash + 1) : path;
     }

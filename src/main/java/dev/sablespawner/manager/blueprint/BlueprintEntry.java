@@ -70,8 +70,8 @@ public record BlueprintEntry(
     }
 
     public String getEntryType() {
-        if ( this.hasPathReference() || this.hasDatapackPathReference() ) { return "Reference"; }
         if ( this.isBuffered() ) { return object.getClass().getSimpleName(); }
+        if ( this.hasPathReference() || this.hasDatapackPathReference() ) { return "Reference"; }
         return "null";
     }
 

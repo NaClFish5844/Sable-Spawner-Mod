@@ -30,6 +30,10 @@ public class BlueprintQuery {
         keyPredicate = keyPredicate.and(k -> Objects.equals(k.name(), name) );
         return this;
     }
+    public BlueprintQuery ofLocationType(String location) {
+        keyPredicate = keyPredicate.and(k -> Objects.equals(k.source(), location) );
+        return this;
+    }
     public BlueprintQuery nameContains(String part) {
         keyPredicate = keyPredicate.and(k -> k.name() != null && k.name().contains(part));
         return this;

@@ -38,5 +38,9 @@
   "sablespawner.command.score.out_of_range": "Update failed: please enter a valid value (0-%s)",
 
   "sablespawner.command.debug.done": "Register contents written to the log",
-  "sablespawner.command.debug.no_controller": "No controller for dimension: %s"
+  "sablespawner.command.debug.no_controller": "No controller for dimension: %s",
+  "sablespawner.command.debug.spawned": "Spawn ticket built and executed: %s",
+  "sablespawner.command.debug.spawn_failed": "Spawn failed (space/blueprint issue): %s",
+  "sablespawner.command.debug.property_not_found": "Property not found: %s",
+  "sablespawner.command.debug.force_flushed": "Spawn queue flushed"
 }
