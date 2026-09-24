@@ -14,7 +14,6 @@ import java.util.function.Predicate;
 
 public class WorldConfigQuery {
     private final ObjectList<WorldConfig> source;
-    private final DefaultConfig defaultConfig;
     private Predicate<WorldConfig> Predicate = cfg -> true;
 
     public WorldConfigQuery(Object2ObjectOpenHashMap<String, DefaultConfig> source) {
@@ -27,7 +26,6 @@ public class WorldConfigQuery {
         }
 
         this.source = worldConfig;
-        this.defaultConfig = source.get("default");
     }
 
     public WorldConfigQuery ofDimension(Level level) {
@@ -48,14 +46,6 @@ public class WorldConfigQuery {
         }
         return null;
     }
-
-    @Nullable public DefaultConfig getDefaultConfig() {
-        return defaultConfig;
-    }
-
-
-
-
 
 }
 

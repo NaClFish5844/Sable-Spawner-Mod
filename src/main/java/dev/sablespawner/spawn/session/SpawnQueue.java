@@ -75,14 +75,23 @@ public class SpawnQueue {
     }
 
     private int getScoreLevel(int score) {
-        WorldConfig worldConfig = getDatapackManager().worldConfigQuery()
-                .ofDimension(LEVEL)
-                .collect();
+        WorldConfig worldConfig = getWorldConfig();
 
-        if ( worldConfig == null ) { return -1; }
         return worldConfig.getScoreLevel(score);
     }
     private long getGameTime() { return SableSpawner.SERVER.overworld().getGameTime(); }
     private DatapackManager getDatapackManager() { return SableSpawner.DATAPACK_MANAGER; }
     private PlayerManager getPlayerManager() { return SableSpawner.PLAYER_MANAGER; }
+    private WorldConfig getWorldConfig() {
+        WorldConfig config = getDatapackManager()
+                .worldConfigQuery()
+                .ofDimension(LEVEL)
+                .collect();
+
+        if ( config == null ) {
+            config = WorldConfig.of( getDatapackManager().getDEFAULT_CONFIG(), null, WorldConfig.Pattern.invalid );
+        }
+
+        return config;
+    }
 }

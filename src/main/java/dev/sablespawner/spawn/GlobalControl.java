@@ -6,7 +6,6 @@ import dev.sablespawner.player.PlayerManager;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import net.minecraft.server.level.ServerLevel;
 import net.neoforged.bus.api.SubscribeEvent;
-import net.neoforged.neoforge.event.level.LevelEvent;
 import net.neoforged.neoforge.event.tick.ServerTickEvent;
 
 import static dev.sablespawner.SableSpawnerConfig.SCAN_INTERVAL;
@@ -26,6 +25,7 @@ public class GlobalControl {
             CONTROLLERS.put(dim, controller);
         }
 
+        controller.clearEnemyIfRestart();
         container.addObserver(controller);
     }
 

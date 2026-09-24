@@ -14,6 +14,10 @@ public class SableSpawnerConfig {
             .comment("敌人碎片的消失时间（tick）")
             .defineInRange("debris_despawn_time",2400,20,72000);
 
+    public static final ModConfigSpec.IntValue LONG_DEBRIS_DESPAWN_TIME = BUILDER
+            .comment("所有碎片的消失时间（tick），此功能用于清理*所有*碎片，设置为-1以禁用，即不扫描全部碎片")
+            .defineInRange("long_debris_despawn_time",24000,-1,1728000);
+
     public static final ModConfigSpec.IntValue SCAN_INTERVAL = BUILDER
             .comment("扫描间隔（tick），每次敌人状态扫描（包括敌人的碎片）之间的间隔，请勿设置过低！")
             .defineInRange("scan_interval",100,10,172800);

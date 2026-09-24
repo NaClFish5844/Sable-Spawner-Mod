@@ -35,6 +35,8 @@ import org.slf4j.Logger;
 
 import java.util.*;
 
+import static dev.sablespawner.SableSpawnerConfig.LONG_DEBRIS_DESPAWN_TIME;
+
 @Getter
 public class EnemyControl implements SubLevelObserver {
     ServerLevel LEVEL;
@@ -60,10 +62,8 @@ public class EnemyControl implements SubLevelObserver {
         this.SPAWN_QUEUE = new SpawnQueue(level);
 
         ENEMY_TRACKER.getEntries().values().removeIf( entry -> !entry.rebind(CONTAINER) );
-
-        clearEnemyIfRestart();
     }
-    private void clearEnemyIfRestart() {
+    public void clearEnemyIfRestart() {
         if ( CONTAINER == null ) { return; }
 
         String prefix = getWorldConfig().getEnemyPrefix();
@@ -78,14 +78,17 @@ public class EnemyControl implements SubLevelObserver {
 
     public void callScan() { // keep running
         SPAWN_QUEUE.updateQueue();
-        scanDebris();
+        scanEnemyDebris();
+        executeAppend();
 
         for ( EnemySubLevelEntry entry : ENEMY_TRACKER.getEntries().values() ) {
             entry.updateMassPercentage();
             if ( entry.isExpired() ) { deferredEnemySubLevelEntryRemover.add(entry); }
         }
 
+        scanAllDebris();
         executeAppend();
+
         executeRemove();
     }
     public void callPerTick() { // only isSpawnerActive==true
@@ -129,9 +132,12 @@ public class EnemyControl implements SubLevelObserver {
             entry.updateMassPercentage();
 
             if ( entry.isFTLCharging() ) {
+                entry.setFTLCharge();
                 onFTLCharging(entry);
 
                 if ( entry.isFTLChargeCompleted() ) { onFTLChargeComplete(entry); }
+            } else {
+                entry.resetFTLCharge();
             }
 
             if ( entry.isExpired() ) { onShipExpired(entry); }
@@ -153,6 +159,13 @@ public class EnemyControl implements SubLevelObserver {
 
         UUID uuid = subLevel.getUniqueId();
         ENEMY_TRACKER.getEntries().remove(uuid);
+    }
+    public void onSplitDetected() {
+        scanEnemyDebris();
+        executeAppend();
+
+        scanAllDebris();
+        executeAppend();
     }
 
     public boolean spawn(SpawnTicket ticket) {
@@ -202,7 +215,7 @@ public class EnemyControl implements SubLevelObserver {
         return true;
     }
 
-    public void scanDebris() {
+    public void scanEnemyDebris() {
         if ( CONTAINER == null ){ return; }
 
         List<ServerSubLevel> allSubLevels = CONTAINER.getAllSubLevels();
@@ -212,6 +225,19 @@ public class EnemyControl implements SubLevelObserver {
 
                 this.deferredEnemySubLevelEntryAppender.add(new EnemySubLevelEntry(null, subLevel, null ));
             }
+        }
+    }
+    public void scanAllDebris() {
+        if ( CONTAINER == null ) { return; }
+        if ( LONG_DEBRIS_DESPAWN_TIME.getAsInt() == -1 ) { return; }
+
+        for ( ServerSubLevel subLevel : CONTAINER.getAllSubLevels() ) {
+            if ( subLevel.getSplitFromSubLevel() == null ) { continue; }
+            if ( ENEMY_TRACKER.getEntries().containsKey( subLevel.getUniqueId() ) ) { continue; }
+
+            EnemySubLevelEntry entry = new EnemySubLevelEntry(null, subLevel, null);
+            entry.setLongLivedDebris(true);
+            this.deferredEnemySubLevelEntryAppender.add(entry);
         }
     }
     public boolean isDebrisOfEnemy(ServerSubLevel subLevel) {
@@ -271,9 +297,12 @@ public class EnemyControl implements SubLevelObserver {
     }
 
     public void onDestroyed(EnemySubLevelEntry enemy) {
-        scanDebris();
+        scanEnemyDebris();
+
         if ( enemy.isDebris() ) { return; }
         if ( !enemy.isDestroyed() ) { return; }
+
+        enemy.toDebris();
 
         UUID targetUUID = enemy.getTarget();
         int enemyValue = Objects.requireNonNull(enemy.getProperty()).getValue();
@@ -285,8 +314,6 @@ public class EnemyControl implements SubLevelObserver {
 
         playerStatus.addScore(enemyValue);
         playerStatus.protect();
-
-        deferredEnemySubLevelEntryRemover.add(enemy);
     }
 
     public void onFTLCharging(EnemySubLevelEntry enemy) {
@@ -310,6 +337,7 @@ public class EnemyControl implements SubLevelObserver {
     }
     private void executeRemove() {
         for ( EnemySubLevelEntry entry : deferredEnemySubLevelEntryRemover ) {
+            if ( !ENEMY_TRACKER.getEntries().containsKey(entry.getUuid()) ) { continue; }
             entry.removeSubLevel();
             ENEMY_TRACKER.pop(entry);
         }

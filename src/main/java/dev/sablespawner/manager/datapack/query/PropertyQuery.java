@@ -82,6 +82,7 @@ public class PropertyQuery {
         return this;
     }
 
+
     @Nullable public PropertyKey pickRandomly() {
         List<Map.Entry<PropertyKey, AbstractSchematicProperty>> candidates = new ArrayList<>( collect().entrySet() );
         if ( candidates.isEmpty() ) { return null; }

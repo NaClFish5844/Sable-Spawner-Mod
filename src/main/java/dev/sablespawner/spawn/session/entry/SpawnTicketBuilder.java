@@ -4,6 +4,7 @@ import dev.sablespawner.SableSpawner;
 import dev.sablespawner.manager.datapack.DatapackManager;
 import dev.sablespawner.manager.datapack.property.sublevel.EnemyProperty;
 import dev.sablespawner.manager.datapack.property.sublevel.PropertyKey;
+import it.unimi.dsi.fastutil.Pair;
 
 import javax.annotation.Nullable;
 import java.util.Random;
@@ -16,36 +17,53 @@ public final class SpawnTicketBuilder {
         EnemyProperty property = (EnemyProperty) getDatapackManager().propertyQuery().get(propertyKey);
         if ( property == null ) { return null; }
 
+        double distance = buildSpawnDistance(property);
+        if ( distance == -1 ) { return null; }
+
+        long delay = buildSpawnDelay(property);
+        if ( delay == -1 ) { return null; }
+
+        int amount = buildSpawnAmount(property);
+        if ( amount == -1 ) { return null; }
+
         return new SpawnTicket(
                 propertyKey,
                 property,
                 targetPlayer,
-                RANDOM.nextInt( property.getMaxSpawnAmount() ) + 1,
-                buildDistance(property),
-                flushSpawnDelay(property)
+                amount,
+                distance,
+                delay
         );
     }
 
-    public static double buildDistance(EnemyProperty property) {
-        double base = property.getMinSpawnDistance();
-        double max = property.getMaxSpawnDistance();
-        double deviation = RANDOM.nextGaussian(0.5,0.15) * (max - base);
-        return Math.min(max, Math.max(base, base + deviation));
-    }
-    private static long flushSpawnDelay(EnemyProperty property) {
-        long minInterval = property.getMinSpawnInterval();
-        long maxInterval = property.getMaxSpawnInterval();
+    private static double buildSpawnDistance(EnemyProperty property) {
+        Pair<Integer, Integer> range = property.getSpawnDistanceRange();
+        if ( range == null ) { return -1; }
 
-        return randomInRange( minInterval, maxInterval );
-    }
-    private static long randomInRange(long min, long max ) {
-        long upperBound;
-        long lowerBound;
-        if ( min <= 0 || max <= 0 ) { return 2147483647; }
-        upperBound = Math.max( min, max ) + 1 ;
-        lowerBound = Math.min( min, max );
+        double base = range.left();
+        double max = range.right();
+        double deviationFactor = RANDOM.nextGaussian(0.5,0.15);
+        deviationFactor = Math.max(0, deviationFactor);
+        deviationFactor = Math.min(1, deviationFactor);
 
-        return lowerBound + RANDOM.nextLong( upperBound - lowerBound );
+        double deviation = (max - base) * deviationFactor;
+
+        return base + deviation;
+    }
+    private static long buildSpawnDelay(EnemyProperty property) {
+        Pair<Integer, Integer> range = property.getSpawnIntervalRange();
+        if ( range == null ) { return -1; }
+
+        long minInterval = range.left();
+        long maxInterval = range.right();
+
+        return minInterval + RANDOM.nextLong( maxInterval - minInterval );
+    }
+    private static int buildSpawnAmount(EnemyProperty property) {
+        int amount = property.getMaxSpawnAmount();
+        if ( amount == -1 ) { return -1; }
+
+        return RANDOM.nextInt( property.getMaxSpawnAmount() ) + 1;
     }
 
     private static DatapackManager getDatapackManager() { return SableSpawner.DATAPACK_MANAGER; }
