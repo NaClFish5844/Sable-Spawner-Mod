@@ -25,8 +25,13 @@ public class GlobalControl {
             CONTROLLERS.put(dim, controller);
         }
 
-        controller.clearEnemyIfRestart();
         container.addObserver(controller);
+    }
+    public void clearEnemyOnRestart() {
+        for ( EnemyControl controller : CONTROLLERS.values() ) {
+            if ( !controller.isLevelActive() ) { continue; }
+            controller.clearEnemyOnServerStart();
+        }
     }
 
     @SubscribeEvent

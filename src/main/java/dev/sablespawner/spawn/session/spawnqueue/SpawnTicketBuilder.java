@@ -1,4 +1,4 @@
-package dev.sablespawner.spawn.session.entry;
+package dev.sablespawner.spawn.session.spawnqueue;
 
 import dev.sablespawner.SableSpawner;
 import dev.sablespawner.manager.datapack.DatapackManager;

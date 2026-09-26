@@ -1,4 +1,4 @@
-package dev.sablespawner.spawn.session.entry;
+package dev.sablespawner.spawn.session.spawnqueue;
 
 import dev.sablespawner.manager.datapack.property.sublevel.EnemyProperty;
 import dev.sablespawner.manager.datapack.property.sublevel.PropertyKey;

@@ -4,7 +4,7 @@ import dev.rew1nd.sableschematicapi.blueprint.SableBlueprint;
 import dev.rew1nd.sableschematicapi.survival.BlueprintPlacementPlan;
 import dev.ryanhcode.sable.companion.math.Pose3d;
 import dev.sablespawner.SableSpawner;
-import dev.sablespawner.spawn.session.entry.SpawnTicket;
+import dev.sablespawner.spawn.session.spawnqueue.SpawnTicket;
 import it.unimi.dsi.fastutil.Pair;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
 import it.unimi.dsi.fastutil.objects.ObjectList;

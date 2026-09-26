@@ -56,7 +56,10 @@ public class SableSpawner {
                         SableSpawner.GLOBAL_CONTROLLER.onContainerReady(serverLevel, container);
                     }
                 });
-
+        /*
+        碎片处理部分的入口
+        航空学没有做完碎片的支持
+        暂时封存
         SubLevelHeatMapManager.addSplitListener(
                 (level, bounds, blocks) -> {
                     if ( !(level instanceof ServerLevel serverLevel) ) { return; }
@@ -67,10 +70,12 @@ public class SableSpawner {
 
                     controller.onSplitDetected();
                 });
+         */
     }
 
     private void commonSetup(FMLCommonSetupEvent event) {
         DataManager.initSideLoadedFiles();
+
     }
 
 
@@ -79,6 +84,7 @@ public class SableSpawner {
         SERVER = event.getServer();
 
         DataManager.reloadAll();
+        GLOBAL_CONTROLLER.clearEnemyOnRestart();
 
         LOGGER.info("SableSpawner 服务器启动中 | SableSpawner server starting");
     }
