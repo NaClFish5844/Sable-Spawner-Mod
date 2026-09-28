@@ -13,6 +13,9 @@ public abstract class SubLevelTracker<T extends SubLevelEntry> {
     protected Object2ObjectOpenHashMap<UUID, T> Tracker = new Object2ObjectOpenHashMap<>();
     private final ObjectList<T> deferredAppender = new ObjectArrayList<>();
     private final ObjectList<T> deferredRemover = new ObjectArrayList<>();
+    private final ObjectList<T> deferredTransfer = new ObjectArrayList<>();
+
+
 
     public T get(UUID uuid) {
         return this.Tracker.get(uuid);
@@ -67,9 +70,18 @@ public abstract class SubLevelTracker<T extends SubLevelEntry> {
         this.deferredRemover.clear();
     }
 
+    public void deferredTransferAdd(T entry)    { this.deferredTransfer.add(entry); }
+    public void deferredTransferCancel(T entry) { this.deferredTransfer.remove(entry); }
+    public void deferredTransferClear()         { this.deferredTransfer.clear(); }
+    public void executeTransfer() {
+        for ( T entry : deferredTransfer ) { this.Tracker.remove( entry.getUuid() ); }   // 只出表
+        this.deferredTransfer.clear();
+    }
+
     public void executeTrackerUpdate() {
         executeAppend();
         executeRemove();
+        executeTransfer();
     }
 
     public void rebindAll(@Nullable ServerSubLevelContainer container) {

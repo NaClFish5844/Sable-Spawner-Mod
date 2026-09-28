@@ -22,6 +22,8 @@ public class EnemySubLevelEntry extends SubLevelEntry {
 
     public boolean initialize() {
         this.initialMass = this.sublevel.getMassTracker().getMass();
+        this.mass = this.initialMass;
+
         if ( this.property == null ) { return false; }
         if ( this.target == null ) { return false; }
 

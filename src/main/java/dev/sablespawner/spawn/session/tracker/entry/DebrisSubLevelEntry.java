@@ -1,6 +1,7 @@
 package dev.sablespawner.spawn.session.tracker.entry;
 
 import dev.ryanhcode.sable.sublevel.ServerSubLevel;
+import dev.ryanhcode.sable.sublevel.SubLevel;
 import lombok.Getter;
 
 import javax.annotation.Nullable;
@@ -38,11 +39,24 @@ public class DebrisSubLevelEntry extends SubLevelEntry {
     public static DebrisSubLevelEntry ofWreck(SourceSubLevelType type, ServerSubLevel subLevel, String sourceName) {
         return new DebrisSubLevelEntry(Cause.wreck, type, subLevel, null, sourceName );
     }
-    public static DebrisSubLevelEntry ofSplit(SourceSubLevelType type, ServerSubLevel subLevel, UUID sourceUUID, String sourceName) {
-        return new DebrisSubLevelEntry(Cause.split, type, subLevel, sourceUUID, sourceName);
-    }
     public static DebrisSubLevelEntry ofSplit(DebrisSubLevelEntry parent, ServerSubLevel subLevel) {
         return new DebrisSubLevelEntry(parent.cause, parent.type, subLevel, parent.splitFrom, parent.sourceName);
+    }
+    public static DebrisSubLevelEntry ofSplit(@Nullable SubLevelEntry parentEntry, SubLevel parent, SubLevel sub) {
+        if ( parentEntry instanceof DebrisSubLevelEntry debris ) {
+            return ofSplit(debris, (ServerSubLevel) sub);
+        }
+
+        SourceSubLevelType type;
+        if ( parentEntry instanceof EnemySubLevelEntry ) {
+            type = SourceSubLevelType.enemy;
+        } else if ( parentEntry instanceof AllySubLevelEntry ) {
+            type = SourceSubLevelType.ally;
+        } else {
+            type = SourceSubLevelType.player;
+        }
+
+        return new DebrisSubLevelEntry(Cause.split, type, (ServerSubLevel) sub, parent.getUniqueId(), parent.getName());
     }
 
     public boolean initialize() {

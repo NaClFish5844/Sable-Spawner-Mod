@@ -12,9 +12,16 @@ import dev.sablespawner.manager.datapack.DatapackManager;
 import dev.sablespawner.manager.datapack.property.config.WorldConfig;
 import dev.sablespawner.manager.datapack.property.sublevel.*;
 import dev.ryanhcode.sable.companion.math.BoundingBox3d;
+import dev.sablespawner.spawn.session.spawnqueue.SpawnTicket;
+import dev.sablespawner.util.SpawnPatternUtil;
 import it.unimi.dsi.fastutil.Pair;
+import it.unimi.dsi.fastutil.objects.ObjectArrayList;
+import it.unimi.dsi.fastutil.objects.ObjectList;
 import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
+import net.neoforged.fml.ModList;
 import org.jetbrains.annotations.Nullable;
+import org.joml.Vector3d;
 import org.slf4j.Logger;
 
 import java.util.*;
@@ -30,24 +37,38 @@ public class Spawner {
         this.CONTAINER = container;
     }
 
-    public boolean BoundBoxVacantDetection(ServerLevel level, BlueprintPlacementPlan plan) {
-        BoundingBox3d targetBoundingBox = plan.bounds();
-        ServerSubLevelContainer container = SubLevelContainer.getContainer(level);
-        List<ServerSubLevel> allSubLevels = new ArrayList<>();
+    public ObjectList<ServerSubLevel> spawnEnemyOfTicket(SpawnTicket ticket) {
+        ObjectList<ServerSubLevel> spawned = new ObjectArrayList<>();
+        ServerPlayer target = (ServerPlayer) LEVEL.getPlayerByUUID(ticket.targetPlayer());
 
-        if (container != null) { allSubLevels = container.getAllSubLevels(); }
+        if ( target == null ) { return spawned; }
 
-        for (ServerSubLevel sublevel : allSubLevels){
-            BoundingBox3d result = new BoundingBox3d();
-            targetBoundingBox.intersect( sublevel.boundingBox(), result );
-            boolean occupied
-                    = result.minX() <= result.maxX()
-                    && result.minY() <= result.maxY()
-                    && result.minZ() <= result.maxZ();
-            if (occupied) { return false; }
+        if ( !ModList.get().isLoaded("sable_schematic_api") ) { return spawned; }
+
+        Vector3d targetPos = new Vector3d(
+                target.position().x,
+                target.position().y,
+                target.position().z
+        );
+
+        ObjectList<BlueprintPlacementPlan> placementPlans = SpawnPatternUtil.newSableBlueprintPlacementPlan(ticket, targetPos);
+
+        if ( placementPlans.isEmpty() ) { return spawned; }
+
+        for ( BlueprintPlacementPlan plan : placementPlans ) {
+            if ( !BoundBoxVacantDetection(LEVEL, plan) ) { return spawned; }
         }
 
-        return true;
+        for ( BlueprintPlacementPlan plan : placementPlans ) {
+            ServerSubLevel subLevel = spawnSublevelWithName( ticket.propertyKey(), LEVEL, plan );
+            if ( subLevel == null ) {
+                for ( ServerSubLevel s : spawned ) { s.markRemoved(); }
+                spawned.clear();
+                return spawned;
+            }
+            spawned.add(subLevel);
+        }
+        return spawned;
     }
 
     public @Nullable ServerSubLevel spawnSublevelWithName(PropertyKey propertyKey, ServerLevel level, BlueprintPlacementPlan plan) {
@@ -82,6 +103,25 @@ public class Spawner {
         return spawnedSublevel;
     }
 
+    public boolean BoundBoxVacantDetection(ServerLevel level, BlueprintPlacementPlan plan) {
+        BoundingBox3d targetBoundingBox = plan.bounds();
+        ServerSubLevelContainer container = SubLevelContainer.getContainer(level);
+        List<ServerSubLevel> allSubLevels = new ArrayList<>();
+
+        if (container != null) { allSubLevels = container.getAllSubLevels(); }
+
+        for (ServerSubLevel sublevel : allSubLevels){
+            BoundingBox3d result = new BoundingBox3d();
+            targetBoundingBox.intersect( sublevel.boundingBox(), result );
+            boolean occupied
+                    = result.minX() <= result.maxX()
+                    && result.minY() <= result.maxY()
+                    && result.minZ() <= result.maxZ();
+            if (occupied) { return false; }
+        }
+
+        return true;
+    }
     private String randomName() {
         StringBuilder builder = new StringBuilder(6);
         for (int i = 0; i < 3; i++) {

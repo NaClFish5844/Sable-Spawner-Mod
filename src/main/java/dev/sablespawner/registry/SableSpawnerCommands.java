@@ -25,12 +25,12 @@ import dev.sablespawner.player.PlayerStatus;
 import dev.sablespawner.spawn.EnemyControl;
 import dev.sablespawner.spawn.GlobalControl;
 import dev.sablespawner.spawn.session.spawnqueue.SpawnQueue;
+import dev.sablespawner.spawn.session.tracker.entry.AllySubLevelEntry;
+import dev.sablespawner.spawn.session.tracker.entry.DebrisSubLevelEntry;
 import dev.sablespawner.spawn.session.tracker.entry.EnemySubLevelEntry;
+import dev.sablespawner.spawn.session.tracker.entry.SubLevelEntry;
 import dev.sablespawner.spawn.session.spawnqueue.SpawnTicket;
 import dev.sablespawner.spawn.session.spawnqueue.SpawnTicketBuilder;
-import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
-import it.unimi.dsi.fastutil.objects.ObjectArrayList;
-import it.unimi.dsi.fastutil.objects.ObjectList;
 import net.minecraft.commands.CommandSourceStack;
 import net.minecraft.commands.SharedSuggestionProvider;
 import net.minecraft.commands.arguments.DimensionArgument;
@@ -136,11 +136,11 @@ public final class SableSpawnerCommands {
         }
             private static LiteralArgumentBuilder<CommandSourceStack> runtime() {
                 return literal("runtime")
-                        .then(spawn())
+                        .then(spawnEnemy())
                         .then(forceFlushSpawnQueue());
             }
-                private static LiteralArgumentBuilder<CommandSourceStack> spawn() {
-                    return literal("spawn")
+                private static LiteralArgumentBuilder<CommandSourceStack> spawnEnemy() {
+                    return literal("spawnEnemy")
                             .then(argument("packname", StringArgumentType.string())
                                     .suggests(SableSpawnerCommands::suggestPackNames)
                                     .then(argument("name", StringArgumentType.string())
@@ -172,18 +172,10 @@ public final class SableSpawnerCommands {
                                 .executes(ctx -> debugSpawnQueue(ctx, currentDimension(ctx)))
                                 .then(argument("dimension", DimensionArgument.dimension())
                                         .executes(ctx -> debugSpawnQueue(ctx, dimensionArg(ctx, "dimension")))))
-                        .then(literal("enemyTracker")
-                                .executes(ctx -> debugEnemyTracker(ctx, currentDimension(ctx)))
+                        .then(literal("subLevelTracker")
+                                .executes(ctx -> debugSubLevelTracker(ctx, currentDimension(ctx)))
                                 .then(argument("dimension", DimensionArgument.dimension())
-                                        .executes(ctx -> debugEnemyTracker(ctx, dimensionArg(ctx, "dimension")))))
-                        .then(literal("rawEnemyTracker")
-                                .executes(ctx -> debugRawEnemyTracker(ctx, currentDimension(ctx)))
-                                .then(argument("dimension", DimensionArgument.dimension())
-                                        .executes(ctx -> debugRawEnemyTracker(ctx, dimensionArg(ctx, "dimension")))))
-                        .then(literal("debrisTracker")
-                                .executes(ctx -> debugDebrisTracker(ctx, currentDimension(ctx)))
-                                .then(argument("dimension", DimensionArgument.dimension())
-                                        .executes(ctx -> debugDebrisTracker(ctx, dimensionArg(ctx, "dimension")))));
+                                        .executes(ctx -> debugSubLevelTracker(ctx, dimensionArg(ctx, "dimension")))));
             }
 
     private static int reload(CommandContext<CommandSourceStack> ctx, String field) {
@@ -488,100 +480,75 @@ public final class SableSpawnerCommands {
         }
         return success(ctx, "sablespawner.command.debug.done");
     }
-    private static int debugEnemyTracker(CommandContext<CommandSourceStack> ctx, String dim) {
+    private static int debugSubLevelTracker(CommandContext<CommandSourceStack> ctx, String dim) {
         EnemyControl controller = findController(ctx, dim);
         if (controller == null) { return 0; }
 
-        var entries = controller.getENEMY_TRACKER().getEntries();
-        ObjectList<EnemySubLevelEntry> enemies = new ObjectArrayList<>();
-        for (EnemySubLevelEntry entry : entries.values()) {
-            if ( !entry.isDebris() ) { enemies.add(entry); }
-        }
-
-        getLogger().info("敌方追踪器：{} 中有 {} 个敌人 | Enemy tracker: {} enemies in {}",
-                dim, enemies.size(), dim, enemies.size());
         long gameTime = getGameTime();
-        for (EnemySubLevelEntry entry : enemies) {
+        logEnemyTracker(controller, dim, gameTime);
+        logAllyTracker(controller, dim, gameTime);
+        logDebrisTracker(controller, dim, gameTime);
+        logContainerSubLevels(controller);
+
+        return success(ctx, "sablespawner.command.debug.done");
+    }
+    private static void logEnemyTracker(EnemyControl controller, String dim, long gameTime) {
+        var entries = controller.getENEMY_TRACKER().query().collect();
+        getLogger().info("敌方追踪器：{} 中有 {} 个敌人 | Enemy tracker: {} enemies in {}",
+                dim, entries.size(), dim, entries.size());
+
+        for (EnemySubLevelEntry entry : entries) {
             EnemyProperty property = Objects.requireNonNull(entry.getProperty());
             long ftlRemain = entry.getFTLChargeStartTime() == -1
                     ? -1
                     : entry.getFTLChargeStartTime() + property.getFTLChargeDuration() - gameTime;
 
-            getLogger().info("\t{}-{}：生成时间={}，总质量={}，剩余质量={}（{}%），剩余撤离时间={}，超光速充能剩余时间={}",
+            getLogger().info("\t{}-{}：生成时间={}，初始质量={}，当前质量={}（{}%），剩余存在时间={}，超光速充能剩余时间={}",
                     shortUuid(entry.getUuid()), shipName(entry),
                     entry.getSpawnedGameTick(),
-                    formatDouble(entry.getTotalMass()), formatDouble(entry.getRemainingMass()), formatDouble(entry.getMassPercentage()),
+                    formatDouble(entry.getInitialMass()), formatDouble(entry.getMass()), formatDouble(entry.getMassPercentage()),
                     property.getLifeTime() - (gameTime - entry.getSpawnedGameTick()),
                     ftlRemain);
         }
-        return success(ctx, "sablespawner.command.debug.done");
     }
-    private static int debugDebrisTracker(CommandContext<CommandSourceStack> ctx, String dim) {
-        EnemyControl controller = findController(ctx, dim);
-        if (controller == null) { return 0; }
-
-        var entries = controller.getENEMY_TRACKER().getEntries();
-        ObjectList<EnemySubLevelEntry> debris = new ObjectArrayList<>();
-        for (EnemySubLevelEntry entry : entries.values()) {
-            if ( entry.isDebris() ) { debris.add(entry); }
-        }
-
-        getLogger().info("碎片追踪器：{} 中有 {} 个碎片 | Debris tracker: {} debris in {}",
-                dim, debris.size(), dim, debris.size());
-        for (EnemySubLevelEntry entry : debris) {
-            UUID parentUuid = entry.getSublevel().getSplitFromSubLevel();
-            EnemySubLevelEntry parent = parentUuid == null ? null : entries.get(parentUuid);
-            String source = parentUuid == null
-                    ? "未知"
-                    : shortUuid(parentUuid) + "-" + (parent == null ? "未知" : shipName(parent));
-
-            getLogger().info("\t{}：碎片源={}，生成时间={}，质量={}",
-                    shortUuid(entry.getUuid()), source,
-                    entry.getSpawnedGameTick(), formatDouble(entry.getRemainingMass()));
-        }
-        return success(ctx, "sablespawner.command.debug.done");
-    }
-    private static int debugRawEnemyTracker(CommandContext<CommandSourceStack> ctx, String dim) {
-        EnemyControl controller = findController(ctx, dim);
-        if (controller == null) { return 0; }
-
-        Object2ObjectOpenHashMap<UUID, EnemySubLevelEntry> entries = controller.getENEMY_TRACKER().getEntries();
-        getLogger().info("原始追踪器：{} 中有 {} 个条目 | Raw tracker: {} entries in {}",
+    private static void logAllyTracker(EnemyControl controller, String dim, long gameTime) {
+        var entries = controller.getALLY_TRACKER().query().collect();
+        getLogger().info("友军追踪器：{} 中有 {} 个友军 | Ally tracker: {} allies in {}",
                 dim, entries.size(), dim, entries.size());
 
-        long gameTime = getGameTime();
-        for (EnemySubLevelEntry entry : entries.values()) {
-            var subLevel = entry.getSublevel();
-            UUID splitFrom = subLevel.getSplitFromSubLevel();
-            EnemyProperty property = entry.getProperty();
-
-            getLogger().info("\t{}-{}：isDebris={}，property={}，longLived={}，生成时间={}，存在时间={}，质量={}（{}%），splitFrom={}，剩余={}",
-                    shortUuid(entry.getUuid()),
-                    shipName(entry),
-                    entry.isDebris(),
-                    property == null ? "null" : property.getSchematicName(),
-                    entry.isLongLivedDebris(),
+        for (AllySubLevelEntry entry : entries) {
+            getLogger().info("\t{}-{}：生成时间={}，存在={}t",
+                    shortUuid(entry.getUuid()), shipName(entry),
                     entry.getSpawnedGameTick(),
+                    gameTime - entry.getSpawnedGameTick());
+        }
+    }
+    private static void logDebrisTracker(EnemyControl controller, String dim, long gameTime) {
+        var entries = controller.getDEBRIS_TRACKER().query().collect();
+        getLogger().info("碎片追踪器：{} 中有 {} 个碎片 | Debris tracker: {} debris in {}",
+                dim, entries.size(), dim, entries.size());
+
+        for (DebrisSubLevelEntry entry : entries) {
+            getLogger().info("\t{}：成因={}，归属={}，来源={}，存在={}t，剩余={}",
+                    shortUuid(entry.getUuid()),
+                    entry.getCause(), entry.getType(),
+                    entry.getSourceName(),
                     gameTime - entry.getSpawnedGameTick(),
-                    formatDouble(entry.getRemainingMass()),
-                    formatDouble(entry.getMassPercentage()),
+                    debrisRemainText(entry, gameTime));
+        }
+    }
+    private static void logContainerSubLevels(EnemyControl controller) {
+        if (controller.getCONTAINER() == null) { return; }
+
+        getLogger().info("容器子空间视图： | Container sublevel view:");
+        for (var subLevel : controller.getCONTAINER().getAllSubLevels()) {
+            UUID splitFrom = subLevel.getSplitFromSubLevel();
+            getLogger().info("\t[容器] {}：名称={}，splitFrom={}，已追踪={}",
+                    shortUuid(subLevel.getUniqueId()),
+                    subLevel.getName(),
                     splitFrom == null ? "null" : shortUuid(splitFrom),
-                    remainText(entry, property, gameTime));
+                    controller.isTracked(subLevel.getUniqueId()));
         }
-
-        if (controller.getCONTAINER() != null) {
-            getLogger().info("容器子空间视图： | Container sublevel view:");
-            for (var subLevel : controller.getCONTAINER().getAllSubLevels()) {
-                UUID splitFrom = subLevel.getSplitFromSubLevel();
-                getLogger().info("\t[容器] {}：名称={}，splitFrom={}，已追踪={}",
-                        shortUuid(subLevel.getUniqueId()),
-                        subLevel.getName(),
-                        splitFrom == null ? "null" : shortUuid(splitFrom),
-                        entries.containsKey(subLevel.getUniqueId()));
-            }
-        }
-
-        return success(ctx, "sablespawner.command.debug.done");
     }
     private static int debugSpawn(CommandContext<CommandSourceStack> ctx, String packName, String propertyName) throws CommandSyntaxException {
         ServerPlayer player = ctx.getSource().getPlayerOrException();
@@ -629,7 +596,7 @@ public final class SableSpawnerCommands {
     private static String shortUuid(UUID uuid) {
         return uuid.toString().substring(0, 8);
     }
-    private static String shipName(EnemySubLevelEntry entry) {
+    private static String shipName(SubLevelEntry entry) {
         String name = entry.getSublevel().getName();
         return name == null ? "未命名" : name;
     }
@@ -657,13 +624,15 @@ public final class SableSpawnerCommands {
     private static String dimensionArg(CommandContext<CommandSourceStack> ctx, String name) {
         return ctx.getArgument(name, ResourceLocation.class).toString();
     }
-    private static String remainText(EnemySubLevelEntry entry, @Nullable EnemyProperty property, long gameTime) {
+    private static String debrisRemainText(DebrisSubLevelEntry entry, long gameTime) {
         long exist = gameTime - entry.getSpawnedGameTick();
-        if (property == null) {
-            int despawn = entry.isLongLivedDebris() ? LONG_DEBRIS_DESPAWN_TIME.getAsInt() : DEBRIS_DESPAWN_TIME.getAsInt();
-            return (despawn - exist) + "（碎片）";
+        if ( entry.getCause() == DebrisSubLevelEntry.Cause.wreck ) {
+            return (LONG_DEBRIS_DESPAWN_TIME.getAsInt() - exist) + "t（长时）";
         }
-        return (property.getLifeTime() - exist) + "（存在）";
+        if ( entry.getType() == DebrisSubLevelEntry.SourceSubLevelType.player ) {
+            return "永久";
+        }
+        return (DEBRIS_DESPAWN_TIME.getAsInt() - exist) + "t（短时）";
     }
     private static CompletableFuture<Suggestions> suggestPackNames(CommandContext<CommandSourceStack> ctx, SuggestionsBuilder builder) {
         Set<String> packs = new HashSet<>();

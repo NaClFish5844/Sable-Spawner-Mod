@@ -1,10 +1,9 @@
 package dev.sablespawner.spawn;
 
-import dev.rew1nd.sableschematicapi.survival.BlueprintPlacementPlan;
-import dev.ryanhcode.sable.Sable;
 import dev.ryanhcode.sable.api.sublevel.ServerSubLevelContainer;
 import dev.ryanhcode.sable.api.sublevel.SubLevelContainer;
 import dev.ryanhcode.sable.api.sublevel.SubLevelObserver;
+import dev.ryanhcode.sable.companion.math.BoundingBox3d;
 import dev.ryanhcode.sable.sublevel.ServerSubLevel;
 import dev.ryanhcode.sable.sublevel.SubLevel;
 import dev.ryanhcode.sable.sublevel.storage.SubLevelRemovalReason;
@@ -12,7 +11,6 @@ import dev.sablespawner.SableSpawner;
 import dev.sablespawner.SableSpawnerConfig;
 import dev.sablespawner.manager.datapack.DatapackManager;
 import dev.sablespawner.manager.datapack.property.config.WorldConfig;
-import dev.sablespawner.manager.datapack.property.sublevel.PropertyKey;
 import dev.sablespawner.player.PlayerManager;
 import dev.sablespawner.player.PlayerStatus;
 import dev.sablespawner.spawn.session.tracker.AllySubLevelTracker;
@@ -23,24 +21,21 @@ import dev.sablespawner.spawn.session.tracker.entry.AllySubLevelEntry;
 import dev.sablespawner.spawn.session.tracker.entry.DebrisSubLevelEntry;
 import dev.sablespawner.spawn.session.tracker.entry.EnemySubLevelEntry;
 import dev.sablespawner.spawn.session.spawnqueue.SpawnTicket;
+import dev.sablespawner.spawn.session.tracker.entry.SubLevelEntry;
 import dev.sablespawner.util.BoxUtil;
-import dev.sablespawner.util.SpawnPatternUtil;
-import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
-import it.unimi.dsi.fastutil.objects.ObjectArrayList;
-import it.unimi.dsi.fastutil.objects.ObjectList;
+import it.unimi.dsi.fastutil.Pair;
+import it.unimi.dsi.fastutil.objects.*;
 import lombok.Getter;
+import net.minecraft.core.BlockPos;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
-import net.neoforged.fml.ModList;
-import org.joml.Vector3d;
 import org.slf4j.Logger;
 
+import javax.annotation.Nullable;
 import java.util.*;
-
-import static dev.sablespawner.SableSpawnerConfig.LONG_DEBRIS_DESPAWN_TIME;
 
 @Getter
 public class EnemyControl implements SubLevelObserver {
@@ -53,10 +48,7 @@ public class EnemyControl implements SubLevelObserver {
     AllySubLevelTracker ALLY_TRACKER;
     DebrisSubLevelTracker DEBRIS_TRACKER;
 
-    @Deprecated
-    ObjectList<EnemySubLevelEntry> deferredEnemySubLevelEntryAppender = new ObjectArrayList<>();
-    @Deprecated
-    ObjectList<EnemySubLevelEntry> deferredEnemySubLevelEntryRemover = new ObjectArrayList<>();
+    private static final long DEBRIS_MATCH_DISTANCE = 1024;
 
     public EnemyControl(ServerLevel level, SubLevelContainer container){
         this.LEVEL = level;
@@ -66,7 +58,8 @@ public class EnemyControl implements SubLevelObserver {
 
         this.ENEMY_TRACKER = new EnemySubLevelTracker();
         this.ALLY_TRACKER = new AllySubLevelTracker();
-        this.DEBRIS_TRACKER = new DebrisSubLevelTracker();
+        //this.DEBRIS_TRACKER = new DebrisSubLevelTracker(this.CONTAINER, this::onDebrisCreated);
+        this.DEBRIS_TRACKER = new DebrisSubLevelTracker(this.CONTAINER, this::onDebrisCreated, this::isTracked);
     }
     public void rebind(ServerLevel level, SubLevelContainer container) {
         this.LEVEL = level;
@@ -86,7 +79,7 @@ public class EnemyControl implements SubLevelObserver {
             if ( subLevel.getSplitFromSubLevel() != null ) { continue; }
             if ( subLevel.getName() == null ) { continue; }
             if ( !subLevel.getName().contains(prefix) ) { continue; }
-            if ( ENEMY_TRACKER.getTracker().containsKey(subLevel.getUniqueId()) ) { continue; }
+            if ( ENEMY_TRACKER.contains( subLevel.getUniqueId() ) ) { continue; }
 
             subLevel.markRemoved();
         }
@@ -106,8 +99,9 @@ public class EnemyControl implements SubLevelObserver {
         //         ALLY_TRACKER.query().isExpired().collect()
         // );
 
-        ENEMY_TRACKER.executeRemove();
-        ALLY_TRACKER.executeRemove();
+        ENEMY_TRACKER.executeTrackerUpdate();
+        // ALLY_TRACKER.executeTrackerUpdate();
+        DEBRIS_TRACKER.executeTrackerUpdate();
     }
     public void callPerTick() { // only isSpawnerActive==true
         for ( EnemySubLevelEntry enemy : ENEMY_TRACKER.query().isDestroyed().collect() ) {
@@ -121,9 +115,11 @@ public class EnemyControl implements SubLevelObserver {
             onDebrisExpired(debris);
         }
 
-        ENEMY_TRACKER.executeRemove();
-        // ALLY_TRACKER.executeRemove();
-        DEBRIS_TRACKER.executeRemove();
+        DEBRIS_TRACKER.collectPendingDebris();
+
+        ENEMY_TRACKER.executeTrackerUpdate();
+        // ALLY_TRACKER.executeTrackerUpdate();
+        DEBRIS_TRACKER.executeTrackerUpdate();
     }
     public void callPer5Tick() { // only isSpawnerActive==true
         SPAWN_QUEUE.updateQueue();
@@ -142,7 +138,6 @@ public class EnemyControl implements SubLevelObserver {
             if ( ticket == null ) { continue; }
 
             if ( ticket.getScheduledSpawnTime( playerStatus ) <= getGameTime() ) {
-
                 for ( int i = 0; i<5 ;i++ ) {
                     if ( spawnEnemy(ticket) ) {
                         this.SPAWN_QUEUE.pop(playerUUID);
@@ -150,16 +145,13 @@ public class EnemyControl implements SubLevelObserver {
                         break;
                     }
                 }
-
             }
         }
 
 
         ENEMY_TRACKER.updateMass();
         for ( EnemySubLevelEntry entry : ENEMY_TRACKER.query().collect() ) {
-            ObjectList<EnemySubLevelEntry> inFTL = ENEMY_TRACKER.query().isFTLCharging().collect();
-
-            if ( inFTL.contains(entry) ) {
+            if ( entry.isFTLCharging() ) {
                 entry.setFTLCharge();
                 onEnemyFTLCharging(entry);
 
@@ -188,107 +180,79 @@ public class EnemyControl implements SubLevelObserver {
         // }
 
         ENEMY_TRACKER.executeTrackerUpdate();
+        // ALLY_TRACKER.executeTrackerUpdate();
+        DEBRIS_TRACKER.executeTrackerUpdate();
     }
-
-    //append Tracker here
-    @Override public void onSubLevelAdded(SubLevel subLevel) {
-        ServerSubLevel sub = (ServerSubLevel) subLevel;
-        if ( isTracked(sub.getUniqueId()) ) { return; }
-
-        SubLevel parent = Sable.HELPER.getContaining(LEVEL, sub.logicalPose().position());
-        if ( parent == null ) { return; }
-
-        DEBRIS_TRACKER.deferredAppenderAdd( createDebrisEntry(parent, sub) );
-        DEBRIS_TRACKER.executeAppend();
-    }
-
-
+    @Override public void onSubLevelAdded(SubLevel subLevel) {}
     @Override public void onSubLevelRemoved(SubLevel subLevel, SubLevelRemovalReason reason) {
         if ( reason == SubLevelRemovalReason.UNLOADED ) { return; }
 
         UUID uuid = subLevel.getUniqueId();
-        ENEMY_TRACKER.getTracker().remove(uuid);
+        ENEMY_TRACKER.pop(uuid);
+        ALLY_TRACKER.pop(uuid);
+        DEBRIS_TRACKER.pop(uuid);
+    }
+/*
+    public void onSplitDetected(Collection<BlockPos> blocks) {
+        BlockPos first = blocks.iterator().next();
+
+        SubLevel parentSubLevel = getParentSubLevelByPlot(first);
+        if ( parentSubLevel == null ) { return; }
+
+        Pair<Class<? extends SubLevelEntry>, SubLevelEntry> parent = getTrackedEntry(parentSubLevel.getUniqueId());
+
+        if ( parent == null ) { return; }
+        SubLevelEntry parentEntry = parent.right();
+
+
+        DebrisSubLevelTracker.PendingSplit pendingSplit =
+                new DebrisSubLevelTracker.PendingSplit( parentEntry, parentSubLevel, getGameTime(), blocks );
+        DEBRIS_TRACKER.pushPendingSplit(pendingSplit);
+    }
+
+ */
+
+
+    public void onSplitDetected(Collection<BlockPos> blocks) {
+        if ( blocks.isEmpty() ) { return; }
+        BlockPos first = blocks.iterator().next();
+
+        SubLevel parentSubLevel = getParentSubLevelByPlot(first);
+        if ( parentSubLevel == null ) { return; }
+
+        Pair<Class<? extends SubLevelEntry>, SubLevelEntry> parent = getTrackedEntry(parentSubLevel.getUniqueId());
+        if ( parent == null ) { return; }
+
+        DEBRIS_TRACKER.pushPendingSplit(new DebrisSubLevelTracker.PendingSplit(
+                parent.right(),
+                parentSubLevel,
+                getGameTime(),
+                blocks,
+                new BoundingBox3d(parentSubLevel.boundingBox())
+        ));
+    }
+
+    @Nullable private SubLevel getParentSubLevelByPlot(BlockPos pos) {
+        SubLevel nearest = null;
+        long nearestDistance = DEBRIS_MATCH_DISTANCE;
+
+        for ( ServerSubLevel subLevel : CONTAINER.getAllSubLevels() ) {
+            BlockPos center = subLevel.getPlot().getCenterBlock();
+            long distance = Math.abs(center.getX() - pos.getX()) + Math.abs(center.getZ() - pos.getZ());
+
+            if ( distance > nearestDistance ) { continue; }
+            nearestDistance = distance;
+            nearest = subLevel;
+        }
+        return nearest;
     }
 
     public boolean spawnEnemy(SpawnTicket ticket) {
-        UUID targetUUID = ticket.targetPlayer();
-        ServerPlayer target = (ServerPlayer) LEVEL.getPlayerByUUID(targetUUID);
-        if ( target == null ) { return false; }
+        ObjectList<ServerSubLevel> spawned = SPAWNER.spawnEnemyOfTicket(ticket);
+        if ( spawned.isEmpty() ) { return false; }
 
-        Vector3d targetPos = new Vector3d(
-                target.position().x,
-                target.position().y,
-                target.position().z
-                );
-
-        // 此处需要加蓝图源mod判断
-        if ( !ModList.get().isLoaded("sable_schematic_api") ) { return false; }
-        ObjectList<BlueprintPlacementPlan> placementPlans = SpawnPatternUtil.newSableBlueprintPlacementPlan(ticket,targetPos);
-
-        if ( placementPlans.isEmpty() ) { return false; }
-
-        for ( BlueprintPlacementPlan plan : placementPlans ) {
-            if( !SPAWNER.BoundBoxVacantDetection(LEVEL, plan) ) { return false; }
-        }
-
-        PropertyKey propertyKey = ticket.propertyKey();
-
-        ObjectList<ServerSubLevel> buffer = new ObjectArrayList<>();
-
-        for ( BlueprintPlacementPlan plan : placementPlans ) {
-            ServerSubLevel spawnedSubLevel = SPAWNER.spawnSublevelWithName( propertyKey, LEVEL, plan );
-            buffer.add(spawnedSubLevel);
-
-            if ( spawnedSubLevel == null ) {
-                for ( ServerSubLevel s : buffer ) {
-                    if ( s != null ) { s.markRemoved(); }
-                }
-
-                this.deferredEnemySubLevelEntryAppender.clear();
-                return false;
-            }
-
-            EnemySubLevelEntry entry = new EnemySubLevelEntry( ticket.property(), spawnedSubLevel, targetUUID );
-
-            this.deferredEnemySubLevelEntryAppender.add(entry);
-        }
-
-        executeAppend();
+        onEnemyShipSpawned(ticket, spawned);
         return true;
-    }
-
-
-    @Deprecated
-    public void scanAllDebris() {
-        if ( CONTAINER == null ) { return; }
-
-        if ( LONG_DEBRIS_DESPAWN_TIME.getAsInt() == -1 ) { return; }
-
-        for ( ServerSubLevel subLevel : CONTAINER.getAllSubLevels() ) {
-            if ( subLevel.getSplitFromSubLevel() == null ) { continue; }
-            if ( ENEMY_TRACKER.getTracker().containsKey( subLevel.getUniqueId() ) ) { continue; }
-
-            EnemySubLevelEntry entry = new EnemySubLevelEntry(null, subLevel, null);
-            // entry.setLongLivedDebris(true);
-            this.deferredEnemySubLevelEntryAppender.add(entry);
-        }
-    }
-    @Deprecated
-    public boolean isDebrisOfEnemy(ServerSubLevel subLevel) {
-        if ( subLevel.getSplitFromSubLevel() == null ) { return false; }
-        UUID fatherUUID = subLevel.getSplitFromSubLevel();
-
-        if ( ENEMY_TRACKER.getTracker().containsKey(subLevel.getUniqueId()) ) { return true; }
-        if ( ENEMY_TRACKER.getTracker().containsKey(fatherUUID) ) { return true; }
-
-        while (true){
-            ServerSubLevel father = (ServerSubLevel) CONTAINER.getSubLevel( fatherUUID );
-            if ( father == null || father.getName() == null ) { return false; }
-            if ( father.getSplitFromSubLevel() == null ) {
-                return father.getName().contains( getWorldConfig().getEnemyPrefix() );
-            }
-            fatherUUID = father.getSplitFromSubLevel();
-        }
     }
 
     public boolean isLevelActive() {
@@ -330,34 +294,46 @@ public class EnemyControl implements SubLevelObserver {
         return false;
     }
     public boolean isTracked(UUID uuid) {
-        return ENEMY_TRACKER.getTracker().containsKey(uuid)
-                || DEBRIS_TRACKER.getTracker().containsKey(uuid)
-                || ALLY_TRACKER.getTracker().containsKey(uuid);
-    }
-    private boolean isNewDebris(SubLevel subLevel) {
-        if ( isTracked(subLevel.getUniqueId()) ) { return false; }
-
-        SubLevel parent = Sable.HELPER.getContaining(LEVEL, subLevel.logicalPose().position());
-
-        return parent != null;
+        return ENEMY_TRACKER.contains(uuid)
+                || DEBRIS_TRACKER.contains(uuid)
+                || ALLY_TRACKER.contains(uuid);
     }
 
+    @Nullable public Pair<Class<? extends SubLevelEntry>, SubLevelEntry> getTrackedEntry(UUID uuid) {
+        if ( !isTracked(uuid) ) { return null; }
 
+        SubLevelEntry entry = ENEMY_TRACKER.get(uuid);
+        if ( entry != null ) { return Pair.of(EnemySubLevelEntry.class, entry); }
+        entry = ALLY_TRACKER.get(uuid);
+        if ( entry != null ) { return Pair.of(AllySubLevelEntry.class, entry); }
+        entry = DEBRIS_TRACKER.get(uuid);
+        if ( entry != null ) { return Pair.of(DebrisSubLevelEntry.class, entry); }
+
+        return null;
+    }
+
+    public void onEnemyShipSpawned(SpawnTicket ticket, ObjectList<ServerSubLevel> spawned) {
+        for ( ServerSubLevel subLevel : spawned ) {
+            EnemySubLevelEntry entry = new EnemySubLevelEntry( ticket.property(), subLevel, ticket.targetPlayer() );
+            ENEMY_TRACKER.deferredAppenderAdd(entry);
+        }
+    }
     public void onEnemyShipDestroyed(EnemySubLevelEntry enemy) {
-        if ( enemy.isDebris() ) { return; }
-        if ( !enemy.isDestroyed() ) { return; }
+        ENEMY_TRACKER.deferredTransferAdd(enemy);
+        DEBRIS_TRACKER.deferredAppenderAdd(
+                DebrisSubLevelEntry.ofWreck(
+                        DebrisSubLevelEntry.SourceSubLevelType.enemy,
+                        enemy.getSublevel(),
+                        enemy.getSublevel().getName()
+                )
+        );
 
-        enemy.toDebris();
-
-        UUID targetUUID = enemy.getTarget();
-        int enemyValue = Objects.requireNonNull(enemy.getProperty()).getValue();
-
-        Object2ObjectOpenHashMap<UUID, PlayerStatus> hashMap = getPlayerManager().query().ofUUID(targetUUID).collect();
+        Object2ObjectOpenHashMap<UUID, PlayerStatus> hashMap =
+                getPlayerManager().query().ofUUID( enemy.getTarget() ).collect();
         if ( hashMap.isEmpty() ) { return; }
 
         PlayerStatus playerStatus = hashMap.values().iterator().next();
-
-        playerStatus.addScore(enemyValue);
+        playerStatus.addScore( Objects.requireNonNull(enemy.getProperty()).getValue() );
         playerStatus.protect();
     }
     public void onEnemyFTLCharging(EnemySubLevelEntry enemy) {
@@ -369,39 +345,28 @@ public class EnemyControl implements SubLevelObserver {
         ENEMY_TRACKER.deferredRemoverAdd(enemy);
     }
 
+    public void onAllyShipSpawned() {
+        // WIP
+    }
     public void onAllyShipDestroyed(AllySubLevelEntry ally) {
+        // WIP
     }
     public void onAllyFTLCharging(AllySubLevelEntry ally) {
+        // WIP
     }
     public void onAllyFTLChargeComplete(AllySubLevelEntry ally) {
-        ALLY_TRACKER.deferredRemoverAdd(ally);
+        // WIP
     }
     public void onAllyShipExpired(AllySubLevelEntry ally){
-        ALLY_TRACKER.deferredRemoverAdd(ally);
+        // WIP
     }
 
+    public void onDebrisCreated(DebrisSubLevelEntry debris) {
+        DEBRIS_TRACKER.deferredAppenderAdd(debris);
+    }
     public void onDebrisExpired(DebrisSubLevelEntry debris){
-        deferredEnemySubLevelEntryRemover.add(debris);
+        DEBRIS_TRACKER.deferredRemoverAdd(debris);
     }
-
-
-    @Deprecated
-    private void executeAppend() {
-        for ( EnemySubLevelEntry entry : deferredEnemySubLevelEntryAppender ) {
-            ENEMY_TRACKER.push(entry);
-        }
-        deferredEnemySubLevelEntryAppender.clear();
-    }
-    @Deprecated
-    private void executeRemove() {
-        for ( EnemySubLevelEntry entry : deferredEnemySubLevelEntryRemover ) {
-            if ( !ENEMY_TRACKER.getTracker().containsKey(entry.getUuid()) ) { continue; }
-            entry.removeSubLevel();
-            ENEMY_TRACKER.pop(entry);
-        }
-        deferredEnemySubLevelEntryRemover.clear();
-    }
-
 
     private long getGameTime() { return SableSpawner.SERVER.overworld().getGameTime(); }
     private MinecraftServer getServer() { return SableSpawner.SERVER; }
@@ -419,8 +384,6 @@ public class EnemyControl implements SubLevelObserver {
         return config;
     }
     private PlayerManager getPlayerManager() { return SableSpawner.PLAYER_MANAGER; }
-    private static Logger getLogger() {
-        return SableSpawner.LOGGER;
-    }
+    private static Logger getLogger() { return SableSpawner.LOGGER; }
 
 }
