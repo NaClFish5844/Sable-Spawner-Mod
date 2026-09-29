@@ -23,6 +23,8 @@ import java.util.UUID;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 
+import static dev.sablespawner.util.AccessUtil.*;
+
 public class DebrisSubLevelTracker extends SubLevelTracker<DebrisSubLevelEntry> {
     ServerSubLevelContainer CONTAINER;
     private final Consumer<DebrisSubLevelEntry> onDebrisCreated;
@@ -35,7 +37,7 @@ public class DebrisSubLevelTracker extends SubLevelTracker<DebrisSubLevelEntry> 
     }
 
     @Override public void rebindAll(@Nullable ServerSubLevelContainer container) {
-        this.Tracker.values().removeIf(entry -> !entry.rebind(container) );
+        this.TRACKER.values().removeIf(entry -> !entry.rebind(container) );
         this.CONTAINER = container;
         this.pendingSplits.clear();
     }
@@ -58,17 +60,14 @@ public class DebrisSubLevelTracker extends SubLevelTracker<DebrisSubLevelEntry> 
         ObjectOpenHashSet<UUID> matchedThisTick = new ObjectOpenHashSet<>();
         for ( int i = pendingSplits.size() - 1; i >= 0; i-- ) {
             PendingSplit pending = pendingSplits.get(i);
+            if ( getGameTime() - pending.appendTime() > 2 ) { pendingSplits.remove(i); continue; }
 
             ServerSubLevel debris = findMatchedDebris(pending, matchedThisTick);
-            if ( debris != null ) {
-                pendingSplits.remove(i);
-                matchedThisTick.add(debris.getUniqueId());
-                onDebrisCreated.accept( DebrisSubLevelEntry.ofSplit(pending.parentEntry(), pending.parentSubLevel(), debris) );
-                continue;
-            }
+            if ( debris == null ) { continue; }
 
-            if ( getGameTime() - pending.appendTime() <= 2 ) { continue; }
             pendingSplits.remove(i);
+            matchedThisTick.add(debris.getUniqueId());
+            onDebrisCreated.accept( DebrisSubLevelEntry.ofSplit(pending.parentEntry(), pending.parentSubLevel(), debris) );
         }
     }
     @Nullable public ServerSubLevel findMatchedDebris(PendingSplit pending, ObjectSet<UUID> excluded) {
@@ -95,9 +94,6 @@ public class DebrisSubLevelTracker extends SubLevelTracker<DebrisSubLevelEntry> 
     }
 
 
-    public DebrisTrackerQuery query()  { return new DebrisTrackerQuery(this.Tracker); }
-
-    private long getGameTime() { return SableSpawner.SERVER.overworld().getGameTime(); }
-    private static Logger getLogger() { return SableSpawner.LOGGER; }
+    public DebrisTrackerQuery query()  { return new DebrisTrackerQuery(this.TRACKER); }
 
 }

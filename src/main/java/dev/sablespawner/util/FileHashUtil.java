@@ -13,6 +13,8 @@ import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.HexFormat;
 
+import static dev.sablespawner.util.AccessUtil.*;
+
 public final class FileHashUtil {
 
     public static String getDatapackFileMD5(DatapackSource datapack, String path) {
@@ -46,7 +48,4 @@ public final class FileHashUtil {
         }
     }
 
-    private static Logger getLogger() {
-        return SableSpawner.LOGGER;
-    }
 }

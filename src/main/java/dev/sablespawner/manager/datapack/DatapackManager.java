@@ -16,6 +16,8 @@ import org.slf4j.Logger;
 import javax.annotation.Nullable;
 import java.nio.file.Path;
 
+import static dev.sablespawner.util.AccessUtil.*;
+
 
 @Getter
 public class DatapackManager {
@@ -69,16 +71,5 @@ public class DatapackManager {
     public WorldConfigQuery worldConfigQuery() {
         return new WorldConfigQuery(WORLDCONFIG_MANAGER);
     }
-
-    private static Logger getLogger() {
-        return SableSpawner.LOGGER;
-    }
-    private static ModList getModList() {
-        return ModList.get();
-    }
-    private static Path getGameDir() {
-        return FMLPaths.GAMEDIR.get();
-    }
-
 
 }

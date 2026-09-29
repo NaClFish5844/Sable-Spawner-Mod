@@ -26,6 +26,8 @@ import org.slf4j.Logger;
 
 import java.util.*;
 
+import static dev.sablespawner.util.AccessUtil.*;
+
 public class Spawner {
 
     private final ServerSubLevelContainer CONTAINER;
@@ -43,7 +45,7 @@ public class Spawner {
 
         if ( target == null ) { return spawned; }
 
-        if ( !ModList.get().isLoaded("sable_schematic_api") ) { return spawned; }
+        if ( !getModList().isLoaded("sable_schematic_api") ) { return spawned; }
 
         Vector3d targetPos = new Vector3d(
                 target.position().x,
@@ -82,7 +84,7 @@ public class Spawner {
         Pair<Class<?>, Object> blueprintObject = getBlueprintManager().query().getAsObject(propertyKey);
 
         if ( blueprintObject == null || !(blueprintObject.right() instanceof SableBlueprint blueprint) ) {
-            SableSpawner.LOGGER.error("蓝图解析失败：{} | Failed to resolve blueprint: {}", propertyKey, propertyKey);
+            getLogger().error("蓝图解析失败：{} | Failed to resolve blueprint: {}", propertyKey, propertyKey);
             return null;
         }
 
@@ -145,12 +147,6 @@ public class Spawner {
     }
 
 
-    private static DatapackManager getDatapackManager() {
-        return SableSpawner.DATAPACK_MANAGER;
-    }
-    private static BlueprintManager getBlueprintManager() {
-        return SableSpawner.BLUEPRINT_MANAGER;
-    }
     private static WorldConfig getWorldConfig(ServerLevel level) {
         WorldConfig config = getDatapackManager()
                 .worldConfigQuery()
@@ -163,8 +159,4 @@ public class Spawner {
 
         return config;
     }
-    private static Logger getLogger() {
-        return SableSpawner.LOGGER;
-    }
-
 }

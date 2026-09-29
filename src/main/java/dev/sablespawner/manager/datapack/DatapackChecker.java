@@ -17,6 +17,8 @@ import org.slf4j.Logger;
 import java.lang.reflect.Field;
 import java.util.*;
 
+import static dev.sablespawner.util.AccessUtil.*;
+
 public final class DatapackChecker {
     private static final Gson GSON = DatapackLoader.getGSON();
 
@@ -159,7 +161,10 @@ public final class DatapackChecker {
     public static boolean checkPropertyBlock( String key, JsonElement element, Class<? extends AbstractSchematicProperty> propertyClass) {
         Set<String> propertyKeys = propertyKeyNames(propertyClass);
 
-        if ( element == null ) { return false; }
+        if ( element == null ) {
+            getLogger().debug("[{}] 是空的 | [{}] is empty", key, key );
+            return false;
+        }
 
         if (!element.isJsonObject()) {
             getLogger().warn("[{}] 不是对象 | [{}] is not an object", key, key );
@@ -377,10 +382,6 @@ public final class DatapackChecker {
         }
 
         return keys;
-    }
-
-    private static Logger getLogger() {
-        return SableSpawner.LOGGER;
     }
 
     public enum FileType {

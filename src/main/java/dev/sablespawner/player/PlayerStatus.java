@@ -6,6 +6,7 @@ import lombok.Setter;
 import net.minecraft.server.level.ServerPlayer;
 
 import static dev.sablespawner.SableSpawnerConfig.PLAYER_PROTECTION_TIME;
+import static dev.sablespawner.util.AccessUtil.*;
 import static dev.sablespawner.player.PlayerDataAttachment.OUT_PROTECTION_TIME;
 import static dev.sablespawner.player.PlayerDataAttachment.SCORE;
 
@@ -60,7 +61,5 @@ public class PlayerStatus {
         if ( score<=0 ) { return; }
         setScore( getScore() - score );
     }
-
-    private long getGameTime() { return SableSpawner.SERVER.overworld().getGameTime(); }
 
 }

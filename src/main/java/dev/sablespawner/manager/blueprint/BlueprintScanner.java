@@ -12,6 +12,8 @@ import java.nio.file.Path;
 import java.util.HashSet;
 import java.util.Set;
 
+import static dev.sablespawner.util.AccessUtil.*;
+
 public final class BlueprintScanner {
 
     public static Set<BlueprintEntry> scanBlueprintsOfPack(DatapackSource datapack) {
@@ -54,20 +56,6 @@ public final class BlueprintScanner {
             }
             default -> new HashSet<>();
         };
-    }
-
-    private static Path getSableSchematicApiFolder() {
-        return getGameDir().resolve("Sable-Schematics");
-    }
-
-    private static ModList getModList() {
-        return ModList.get();
-    }
-    private static Logger getLogger() {
-        return SableSpawner.LOGGER;
-    }
-    private static Path getGameDir() {
-        return FMLPaths.GAMEDIR.get();
     }
 
 }

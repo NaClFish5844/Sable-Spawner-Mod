@@ -10,6 +10,8 @@ import javax.annotation.Nullable;
 import java.util.Random;
 import java.util.UUID;
 
+import static dev.sablespawner.util.AccessUtil.*;
+
 public final class SpawnTicketBuilder {
     private static final Random RANDOM = new Random();
 
@@ -65,7 +67,5 @@ public final class SpawnTicketBuilder {
 
         return RANDOM.nextInt( property.getMaxSpawnAmount() ) + 1;
     }
-
-    private static DatapackManager getDatapackManager() { return SableSpawner.DATAPACK_MANAGER; }
 
 }

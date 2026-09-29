@@ -7,6 +7,8 @@ import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import lombok.Getter;
 import org.slf4j.Logger;
 
+import static dev.sablespawner.util.AccessUtil.*;
+
 @Getter
 public class BlueprintManager {
     public static final BlueprintManager INSTANCE = new BlueprintManager();
@@ -55,7 +57,4 @@ public class BlueprintManager {
     }
 
 
-    private static Logger getLogger() {
-        return SableSpawner.LOGGER;
-    }
 }

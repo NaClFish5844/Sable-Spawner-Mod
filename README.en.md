@@ -218,6 +218,7 @@ Each `.json` under `data/properties/` describes one blueprint. **Top-level commo
 - **datapack source**: put blueprints in the pack under `data/blueprints/<schematic_name>` (the legacy folder `data/schematics/` is still scanned as a fallback); must be a **compressed NBT** file (`.nbt`)
 - **folder source**: reads `gamedir/Sable-Schematics/<schematic_name>` (the Sable Schematic API blueprint library)
 - Blueprint contents are parsed by the corresponding mod; blueprint file names must be unique within a pack (see 5.1)
+- **One blueprint file = one ship (one sub-level)**: placement always produces a single sub-level; do not pack multiple ships into one blueprint file
 
 ### 5.6 ally / prefab Blocks
 
@@ -298,7 +299,7 @@ Due check (every 5 ticks)
 Spawn
   ├─ Blueprint object: fetched from the blueprint registry (cached ones directly; large reference-state ones read on first use)
   ├─ Pose generation: random formation + spacing (see 7.4)
-  ├─ Vacancy check for all positions (BoundBoxVacantDetection), retry ≤5 times on failure
+  ├─ Vacancy check for all positions (BoundBoxVacantDetection), retry ≤3 times on failure
   ├─ Success → place + name ([prefix] random 3 letters + 3 digits) → add to tracker
   └─ Clear ticket → re-prefetch next round
 ```

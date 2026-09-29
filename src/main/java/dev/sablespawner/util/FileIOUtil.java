@@ -13,7 +13,10 @@ import javax.annotation.Nullable;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.nio.ByteBuffer;
+import java.nio.charset.CharacterCodingException;
 import java.nio.charset.Charset;
+import java.nio.charset.CodingErrorAction;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -23,6 +26,8 @@ import java.util.function.Function;
 import java.util.stream.Stream;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
+
+import static dev.sablespawner.util.AccessUtil.*;
 
 public final class FileIOUtil {
 
@@ -76,11 +81,15 @@ public final class FileIOUtil {
         }
     }
     public static JsonObject readAsJson(InputStream stream) {
+        byte[] bytes = readAsBytes(stream);
+        if ( bytes == null ) { return null; }
+
+        String text = decodeText(bytes);
+
         try {
-            return JsonParser.parseReader( new InputStreamReader(stream, StandardCharsets.UTF_8) ).getAsJsonObject();
-        } catch ( RuntimeException e ) {
-            getLogger().error("读取 JSON 失败 | Failed to parse JSON", e);
-            return null;
+            return JsonParser.parseString(text).getAsJsonObject();
+        } catch ( RuntimeException directError ) {
+            return repairAndParse(text, directError);
         }
     }
     public static CompoundTag readAsNbt(InputStream stream) {
@@ -92,6 +101,81 @@ public final class FileIOUtil {
         }
     }
 
+
+    @Nullable private static JsonObject repairAndParse(String text, RuntimeException directError) {
+        String normalized = normalizeJsonPunctuation(text);
+
+        if ( !normalized.equals(text) ) {
+            try {
+                JsonObject fixed = JsonParser.parseString(normalized).getAsJsonObject();
+                getLogger().warn("JSON 含全角字符，已自动修正后解析成功 | Full-width characters auto-corrected | {}",
+                        directError.getMessage());
+                return fixed;
+            } catch ( RuntimeException ignored ) { }
+        }
+
+        getLogger().error("读取 JSON 失败：{} | Failed to parse JSON: {}",
+                directError.getMessage(), directError.getMessage());
+        return null;
+    }
+    private static String decodeText(byte[] bytes) {
+        String utf8 = decodeStrict(bytes, StandardCharsets.UTF_8);
+        if ( utf8 != null ) { return utf8; }
+
+        String gb18030 = decodeStrict(bytes, Charset.forName("GB18030"));
+        if ( gb18030 != null ) {
+            getLogger().warn("文件非 UTF-8 编码，已按 GB18030 解码 | File is not UTF-8, decoded as GB18030");
+            return gb18030;
+        }
+
+        getLogger().warn("文件编码无法识别，按 UTF-8 宽松解码 | Unrecognized encoding, decoded as UTF-8 with replacement");
+        return new String(bytes, StandardCharsets.UTF_8);
+    }
+    @Nullable private static String decodeStrict(byte[] bytes, Charset charset) {
+        try {
+            return charset.newDecoder()
+                    .onMalformedInput(CodingErrorAction.REPORT)
+                    .onUnmappableCharacter(CodingErrorAction.REPORT)
+                    .decode(ByteBuffer.wrap(bytes))
+                    .toString();
+        } catch ( CharacterCodingException e ) {
+            return null;
+        }
+    }
+    private static String normalizeJsonPunctuation(String text) {
+        StringBuilder out = new StringBuilder(text.length());
+        boolean inString = false;
+        boolean escaped = false;
+
+        for ( int i = 0; i < text.length(); i++ ) {
+            char c = text.charAt(i);
+
+            if ( inString ) {
+                if ( escaped ) { out.append(c); escaped = false; continue; }
+                if ( c == '\\' ) { out.append(c); escaped = true; continue; }
+                if ( c == '"' ) { out.append(c); inString = false; continue; }
+                if ( c == '“' || c == '”' ) { out.append('"'); inString = false; continue; }
+                out.append(c);
+                continue;
+            }
+
+            if ( c == '"' ) { out.append(c); inString = true; continue; }
+            if ( c == '“' || c == '”' ) { out.append('"'); inString = true; continue; }
+
+            out.append(toHalfWidth(c));
+        }
+        return out.toString();
+    }
+    private static char toHalfWidth(char c) {
+        if ( c == '　' ) { return ' '; }
+        if ( c == '。' ) { return '.'; }
+        if ( c == '‘' || c == '’' ) { return '\''; }
+        if ( c >= '\uFF01' && c <= '\uFF5E' ) { return (char) (c - 0xFEE0); }
+        return c;
+    }
+    private static boolean hasBrokenNames(ZipFile zip) {
+        return zip.stream().anyMatch( e -> e.getName().indexOf('\uFFFD') >= 0 );
+    }
 
     public static <T> T readDatapackFileStream(DatapackSource datapack, String filePath, Function<InputStream, T> reader) {
         if ( datapack.isZipFile() ) {
@@ -213,10 +297,6 @@ public final class FileIOUtil {
         return null;
     }
 
-    private static boolean hasBrokenNames(ZipFile zip) {
-        return zip.stream().anyMatch( e -> e.getName().indexOf('\uFFFD') >= 0 );
-    }
-
     private static String concatPath(String validRoot, String path) {
         if ( validRoot == null || validRoot.isEmpty() ) { return path; }
         return validRoot + "/" + path;
@@ -225,10 +305,5 @@ public final class FileIOUtil {
         if ( validRoot == null || validRoot.isEmpty() ) { return root.resolve(filePath); }
         return root.resolve(validRoot).resolve(filePath);
     }
-
-    private static Logger getLogger() {
-        return SableSpawner.LOGGER;
-    }
-
 
 }

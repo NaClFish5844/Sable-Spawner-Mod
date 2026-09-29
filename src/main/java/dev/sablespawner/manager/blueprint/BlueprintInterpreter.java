@@ -12,6 +12,8 @@ import javax.annotation.Nullable;
 import java.nio.file.Path;
 import java.util.Objects;
 
+import static dev.sablespawner.util.AccessUtil.*;
+
 public final class BlueprintInterpreter {
 
     public static DatapackManager.BlueprintSourceModId interpretBlueprintSource(BlueprintEntry entry, @Nullable DatapackManager.BlueprintSourceModId ignore) {
@@ -89,13 +91,5 @@ public final class BlueprintInterpreter {
         int slash = path.lastIndexOf('/');
         return slash >= 0 ? path.substring(slash + 1) : path;
     }
-
-    private static Path getGameDir() {
-        return FMLPaths.GAMEDIR.get();
-    }
-    private static Path getSableSchematicApiFolder() {
-        return getGameDir().resolve("Sable-Schematics");
-    }
-    private static DatapackManager getDatapackManager() { return SableSpawner.DATAPACK_MANAGER; }
 
 }

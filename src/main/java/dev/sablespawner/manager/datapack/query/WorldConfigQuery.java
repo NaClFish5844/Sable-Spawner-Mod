@@ -14,7 +14,7 @@ import java.util.function.Predicate;
 
 public class WorldConfigQuery {
     private final ObjectList<WorldConfig> source;
-    private Predicate<WorldConfig> Predicate = cfg -> true;
+    private Predicate<WorldConfig> predicate = cfg -> true;
 
     public WorldConfigQuery(Object2ObjectOpenHashMap<String, DefaultConfig> source) {
         ObjectList<WorldConfig> worldConfig = new ObjectArrayList<>();
@@ -30,17 +30,17 @@ public class WorldConfigQuery {
 
     public WorldConfigQuery ofDimension(Level level) {
         String targetDim = level.dimension().location().toString();
-        Predicate = Predicate.and(cfg -> Objects.equals(cfg.getDimension(), targetDim) );
+        predicate = predicate.and(cfg -> Objects.equals(cfg.getDimension(), targetDim) );
         return this;
     }
     public WorldConfigQuery ofDimension(String dimension) {
-        Predicate = Predicate.and(cfg -> Objects.equals(cfg.getDimension(), dimension) );
+        predicate = predicate.and(cfg -> Objects.equals(cfg.getDimension(), dimension) );
         return this;
     }
 
     @Nullable public WorldConfig collect() {
         for ( WorldConfig config : source ) {
-            if ( Predicate.test(config) ) {
+            if ( predicate.test(config) ) {
                 return config;
             }
         }

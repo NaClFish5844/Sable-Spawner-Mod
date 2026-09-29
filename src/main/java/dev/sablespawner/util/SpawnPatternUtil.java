@@ -14,6 +14,8 @@ import org.joml.Vector3d;
 import javax.annotation.Nullable;
 import java.util.Random;
 
+import static dev.sablespawner.util.AccessUtil.*;
+
 public final class SpawnPatternUtil {
     private SpawnPatternUtil() {}
     private static final Random RANDOM = new Random();
@@ -63,7 +65,7 @@ public final class SpawnPatternUtil {
     public static ObjectList<BlueprintPlacementPlan> newSableBlueprintPlacementPlan( SpawnTicket ticket, Vector3d playerPos ) {
         if ( ticket == null ) { return new ObjectArrayList<>(); }
 
-        Pair<Class<?>, Object> result = SableSpawner.BLUEPRINT_MANAGER.query().getAsObject( ticket.propertyKey() );
+        Pair<Class<?>, Object> result = getBlueprintManager().query().getAsObject( ticket.propertyKey() );
         if ( result == null || !(result.right() instanceof SableBlueprint blueprint) ) { return new ObjectArrayList<>(); }
 
         double spacing = getSpacing(blueprint);

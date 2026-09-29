@@ -53,7 +53,7 @@ public class SableSpawner {
         SableEventPlatform.INSTANCE.onSubLevelContainerReady(
                 (level, container) -> {
                     if ( level instanceof ServerLevel serverLevel ) {
-                        SableSpawner.GLOBAL_CONTROLLER.onContainerReady(serverLevel, container);
+                        GLOBAL_CONTROLLER.onContainerReady(serverLevel, container);
                     }
                 });
         SubLevelHeatMapManager.addSplitListener(

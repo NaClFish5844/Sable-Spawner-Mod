@@ -1,4 +1,16 @@
 {
+  "sablespawner.configuration.title": "Sable Spawner 配置",
+  "sablespawner.configuration.section.sablespawner-server.toml": "Sable Spawner 服务端配置",
+  "sablespawner.configuration.section.sablespawner-server.toml.title": "Sable Spawner",
+
+  "sablespawner.configuration.enemy_detection_distance": "敌人探测距离（格）",
+  "sablespawner.configuration.debris_despawn_time": "短时碎片消失时间（tick）",
+  "sablespawner.configuration.long_debris_despawn_time": "长时碎片消失时间（tick）",
+  "sablespawner.configuration.scan_interval": "冷扫描间隔（tick）",
+  "sablespawner.configuration.player_protection_time": "玩家保护时间（tick）",
+  "sablespawner.configuration.player_spawn_protection_time": "玩家出生保护时间（tick）",
+  "sablespawner.configuration.blueprint_cache_max_blocks": "蓝图缓存方块数上限",
+
   "sablespawner.command.reload.all": "重载全部数据完成，加载 %s 个数据包与 %s 个蓝图，用时 %s ms",
   "sablespawner.command.reload.datapack": "重载全部数据完成，加载 %s 个数据包，用时 %s ms",
   "sablespawner.command.reload.blueprint": "重载全部数据完成，加载 %s 个蓝图，用时 %s ms",

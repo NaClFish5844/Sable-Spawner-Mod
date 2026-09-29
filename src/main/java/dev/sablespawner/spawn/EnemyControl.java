@@ -37,6 +37,8 @@ import org.slf4j.Logger;
 import javax.annotation.Nullable;
 import java.util.*;
 
+import static dev.sablespawner.util.AccessUtil.*;
+
 @Getter
 public class EnemyControl implements SubLevelObserver {
     ServerLevel LEVEL;
@@ -138,7 +140,7 @@ public class EnemyControl implements SubLevelObserver {
             if ( ticket == null ) { continue; }
 
             if ( ticket.getScheduledSpawnTime( playerStatus ) <= getGameTime() ) {
-                for ( int i = 0; i<5 ;i++ ) {
+                for ( int i = 0; i < 3 ;i++ ) {
                     if ( spawnEnemy(ticket) ) {
                         this.SPAWN_QUEUE.pop(playerUUID);
                         // getLogger().debug("为 {} 刷新了{}:{}", Objects.requireNonNull(LEVEL.getPlayerByUUID(playerUUID)).getDisplayName(),ticket.property().getPackName(),ticket.property().getSchematicName());
@@ -368,9 +370,6 @@ public class EnemyControl implements SubLevelObserver {
         DEBRIS_TRACKER.deferredRemoverAdd(debris);
     }
 
-    private long getGameTime() { return SableSpawner.SERVER.overworld().getGameTime(); }
-    private MinecraftServer getServer() { return SableSpawner.SERVER; }
-    private DatapackManager getDatapackManager() { return SableSpawner.DATAPACK_MANAGER; }
     private WorldConfig getWorldConfig() {
         WorldConfig config = getDatapackManager()
                 .worldConfigQuery()
@@ -383,7 +382,4 @@ public class EnemyControl implements SubLevelObserver {
 
         return config;
     }
-    private PlayerManager getPlayerManager() { return SableSpawner.PLAYER_MANAGER; }
-    private static Logger getLogger() { return SableSpawner.LOGGER; }
-
 }

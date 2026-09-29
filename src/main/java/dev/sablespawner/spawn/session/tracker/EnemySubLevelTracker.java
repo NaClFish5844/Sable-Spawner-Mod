@@ -5,10 +5,10 @@ import dev.sablespawner.spawn.session.tracker.query.EnemyTrackerQuery;
 
 public class EnemySubLevelTracker extends SubLevelTracker<EnemySubLevelEntry> {
     public void updateMass() {
-        for ( EnemySubLevelEntry entry : this.Tracker.values() ) {
+        for ( EnemySubLevelEntry entry : this.TRACKER.values() ) {
             entry.updateMass();
         }
     }
 
-    public EnemyTrackerQuery query()  { return new EnemyTrackerQuery(this.Tracker); }
+    public EnemyTrackerQuery query()  { return new EnemyTrackerQuery(this.TRACKER); }
 }

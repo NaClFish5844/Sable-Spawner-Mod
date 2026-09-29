@@ -16,6 +16,8 @@ import org.slf4j.Logger;
 import java.nio.file.Path;
 import java.util.*;
 
+import static dev.sablespawner.util.AccessUtil.*;
+
 
 public final class DatapackLoader {
     @Getter private static final Gson GSON = new GsonBuilder()
@@ -148,7 +150,7 @@ public final class DatapackLoader {
         try {
             prop = GSON.fromJson( object.get(blockKey), propertyClass );
         } catch ( RuntimeException e ) {
-            getLogger().warn("[{}] 反序列化失败，跳过该类型：{} | [{}] deserialization failed, skipping this type: {}", blockKey, e.toString(), blockKey, e.toString());
+            getLogger().warn("[{}] 反序列化失败，跳过该类型：{} | [{}] deserialization failed, skipping this type: {}", blockKey, e, blockKey, e.toString());
             return null;
         }
         parseBaseProperty(prop, packName, object);
@@ -177,16 +179,5 @@ public final class DatapackLoader {
         int dot = fileName.lastIndexOf('.');
         return dot > 0 ? fileName.substring(0, dot) : fileName;
     }
-
-    private static Logger getLogger() {
-        return SableSpawner.LOGGER;
-    }
-    private static Path getGameDir() {
-        return FMLPaths.GAMEDIR.get();
-    }
-    private static Path getSableSchematicApiFolder() {
-        return getGameDir().resolve("Sable-Schematics");
-    }
-
 
 }

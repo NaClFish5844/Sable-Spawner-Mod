@@ -11,6 +11,8 @@ import java.io.InputStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
 
+import static dev.sablespawner.util.AccessUtil.*;
+
 public final class DataManager {
 
     public static void initSideLoadedFiles() {
@@ -57,22 +59,6 @@ public final class DataManager {
     }
     public static int getBlueprintAmount() {
         return getBlueprintManager().getBLUEPRINT_REGISTRY().size();
-    }
-
-    private static Logger getLogger() {
-        return SableSpawner.LOGGER;
-    }
-    private static DatapackManager getDatapackManager() {
-        return SableSpawner.DATAPACK_MANAGER;
-    }
-    private static BlueprintManager getBlueprintManager() {
-        return SableSpawner.BLUEPRINT_MANAGER;
-    }
-    private static Path getGameDir() {
-        return FMLPaths.GAMEDIR.get();
-    }
-    private static Path getSableSpawnerDir() {
-        return getGameDir().resolve("sablespawner");
     }
 
 }

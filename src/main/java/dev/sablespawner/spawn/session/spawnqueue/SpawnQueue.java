@@ -7,12 +7,17 @@ import dev.sablespawner.manager.datapack.property.sublevel.PropertyKey;
 import dev.sablespawner.player.PlayerManager;
 import dev.sablespawner.player.PlayerStatus;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
+import it.unimi.dsi.fastutil.objects.ObjectArrayList;
+import it.unimi.dsi.fastutil.objects.ObjectList;
 import lombok.Getter;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 
 import javax.annotation.Nullable;
+import java.util.Map;
 import java.util.UUID;
+
+import static dev.sablespawner.util.AccessUtil.*;
 
 @Getter
 public class SpawnQueue {
@@ -28,15 +33,21 @@ public class SpawnQueue {
                 .inLevel(LEVEL)
                 .collect();
 
+        ObjectList<UUID> deferredRemove = new ObjectArrayList<>();
+
+        for (Map.Entry<UUID, SpawnTicket> ticketEntry : this.queue.entrySet() ) {
+            UUID uuid = ticketEntry.getKey();
+            if ( !allPlayers.containsKey(uuid) ) { deferredRemove.add(uuid); }
+        }
+        for ( UUID uuid : deferredRemove ) { pop(uuid); }
+
         for ( PlayerStatus playerStat : allPlayers.values() ) {
             ServerPlayer player = playerStat.getPlayer();
             UUID playerUUID = player.getUUID();
             boolean inQueue = this.queue.containsKey(playerUUID);
-            boolean inLevel = this.LEVEL.getPlayers(p -> true).contains(player);
 
-            if ( inQueue && inLevel ) { continue; }
-            if ( !inQueue && inLevel ) { push(playerUUID); }
-            if ( !inLevel ) { pop(playerUUID); }
+            if (inQueue) { continue; }
+            push(playerUUID);
         }
     }
 
@@ -77,9 +88,6 @@ public class SpawnQueue {
 
         return worldConfig.getScoreLevel(score);
     }
-    private long getGameTime() { return SableSpawner.SERVER.overworld().getGameTime(); }
-    private DatapackManager getDatapackManager() { return SableSpawner.DATAPACK_MANAGER; }
-    private PlayerManager getPlayerManager() { return SableSpawner.PLAYER_MANAGER; }
     private WorldConfig getWorldConfig() {
         WorldConfig config = getDatapackManager()
                 .worldConfigQuery()

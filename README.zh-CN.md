@@ -218,6 +218,7 @@ sablespawner/
 - **datapack 源**：蓝图放包内 `data/blueprints/<schematic_name>`（旧目录名 `data/schematics/` 仍兜底扫描），必须为**压缩 nbt**（`.nbt`）
 - **folder 源**：读取 `gamedir/Sable-Schematics/<schematic_name>`（Sable Schematic API 的蓝图库）
 - 蓝图内容由对应 mod 解析；包内蓝图文件名唯一（见 5.1）
+- **一个蓝图文件对应一艘船体（一个子空间）**：放置只会产生单个 sub-level；请勿把多艘船封装进同一蓝图文件
 
 ### 5.6 ally / prefab 块
 
@@ -298,7 +299,7 @@ sablespawner/
 刷出
   ├─ 蓝图对象：经蓝图注册表获取（缓存的直取；大型引用态首次现读）
   ├─ 姿态生成：随机队形 + spacing（见 7.4）
-  ├─ 全部点位空位检测（BoundBoxVacantDetection），失败重试 ≤5 次
+  ├─ 全部点位空位检测（BoundBoxVacantDetection），失败重试 ≤3 次
   ├─ 成功 → 放置 + 命名（[前缀] 随机三字母三数字）→ 入追踪器
   └─ 清票据 → 下轮重新预取
 ```

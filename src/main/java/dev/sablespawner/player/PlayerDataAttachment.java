@@ -2,6 +2,7 @@ package dev.sablespawner.player;
 
 import com.mojang.serialization.Codec;
 import dev.sablespawner.SableSpawner;
+import dev.sablespawner.util.AccessUtil;
 import net.neoforged.neoforge.attachment.AttachmentType;
 import net.neoforged.neoforge.registries.DeferredHolder;
 import net.neoforged.neoforge.registries.DeferredRegister;
@@ -13,7 +14,7 @@ public final class PlayerDataAttachment {
 
     public static final DeferredHolder<AttachmentType<?>, AttachmentType<Long>> OUT_PROTECTION_TIME =
             ATTACHMENT_TYPES.register("out_protection_time",
-                    () -> AttachmentType.builder(PlayerDataAttachment::getGameTime)
+                    () -> AttachmentType.builder(AccessUtil::getGameTime)
                             .serialize(Codec.LONG)
                             .copyOnDeath()
                             .build());
@@ -26,6 +27,4 @@ public final class PlayerDataAttachment {
                             .build());
 
     private PlayerDataAttachment() {}
-
-    private static long getGameTime() { return SableSpawner.SERVER.overworld().getGameTime(); }
 }

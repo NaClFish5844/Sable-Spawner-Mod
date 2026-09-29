@@ -10,7 +10,7 @@ import javax.annotation.Nullable;
 import java.util.UUID;
 
 public abstract class SubLevelTracker<T extends SubLevelEntry> {
-    protected Object2ObjectOpenHashMap<UUID, T> Tracker = new Object2ObjectOpenHashMap<>();
+    protected Object2ObjectOpenHashMap<UUID, T> TRACKER = new Object2ObjectOpenHashMap<>();
     private final ObjectList<T> deferredAppender = new ObjectArrayList<>();
     private final ObjectList<T> deferredRemover = new ObjectArrayList<>();
     private final ObjectList<T> deferredTransfer = new ObjectArrayList<>();
@@ -18,16 +18,16 @@ public abstract class SubLevelTracker<T extends SubLevelEntry> {
 
 
     public T get(UUID uuid) {
-        return this.Tracker.get(uuid);
+        return this.TRACKER.get(uuid);
     }
     public int size() {
-        return this.Tracker.size();
+        return this.TRACKER.size();
     }
     public boolean contains(UUID uuid) {
-        return this.Tracker.containsKey(uuid);
+        return this.TRACKER.containsKey(uuid);
     }
     public boolean contains(T entry) {
-        return this.Tracker.containsValue(entry);
+        return this.TRACKER.containsValue(entry);
     }
 
     public void deferredAppenderAdd(T entry) {
@@ -64,7 +64,7 @@ public abstract class SubLevelTracker<T extends SubLevelEntry> {
     }
     public void executeRemove() {
         for (T entry : deferredRemover) {
-            if ( !Tracker.containsKey(entry.getUuid()) ) { continue; }
+            if ( !TRACKER.containsKey(entry.getUuid()) ) { continue; }
             popWithDelete(entry);
         }
         this.deferredRemover.clear();
@@ -74,7 +74,7 @@ public abstract class SubLevelTracker<T extends SubLevelEntry> {
     public void deferredTransferCancel(T entry) { this.deferredTransfer.remove(entry); }
     public void deferredTransferClear()         { this.deferredTransfer.clear(); }
     public void executeTransfer() {
-        for ( T entry : deferredTransfer ) { this.Tracker.remove( entry.getUuid() ); }   // 只出表
+        for ( T entry : deferredTransfer ) { this.TRACKER.remove( entry.getUuid() ); }   // 只出表
         this.deferredTransfer.clear();
     }
 
@@ -85,11 +85,11 @@ public abstract class SubLevelTracker<T extends SubLevelEntry> {
     }
 
     public void rebindAll(@Nullable ServerSubLevelContainer container) {
-        this.Tracker.values().removeIf(entry -> !entry.rebind(container) );
+        this.TRACKER.values().removeIf(entry -> !entry.rebind(container) );
     }
 
     public void push(T entry) {
-        this.Tracker.put( entry.getUuid(), entry );
+        this.TRACKER.put( entry.getUuid(), entry );
     }
     public T popWithDelete(T entry) {
         entry.removeSubLevel();
@@ -99,7 +99,7 @@ public abstract class SubLevelTracker<T extends SubLevelEntry> {
         return pop(entry.getUuid());
     }
     public T pop(UUID uuid) {
-        return this.Tracker.remove(uuid);
+        return this.TRACKER.remove(uuid);
     }
 
 }

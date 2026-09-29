@@ -16,7 +16,10 @@ public class EnemyProperty extends AbstractSchematicProperty {
     @Getter @Nullable private ArrayList<String> availableDimension;
 
     @Getter private boolean naturalSpawn;
-    @Getter private int weight;
+    private int weight;
+    public int getWeight() {
+        return Math.max(0, this.weight);
+    }
 
     // ticket building
     private int minSpawnDistance;

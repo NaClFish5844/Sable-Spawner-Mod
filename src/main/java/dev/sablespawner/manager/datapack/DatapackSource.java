@@ -17,10 +17,6 @@ public class DatapackSource {
         this.packMeta = packMeta;
     }
 
-    @Deprecated
-    public static DatapackSource of(Path root, String relativeValidRoot, PackMeta packMeta) {
-        return new DatapackSource(root, relativeValidRoot, packMeta);
-    }
     public static DatapackSource ofDir(Path root, PackMeta packMeta) {
         return new DatapackSource(root, null, packMeta);
     }

@@ -9,6 +9,8 @@ import lombok.Setter;
 import javax.annotation.Nullable;
 import java.util.UUID;
 
+import static dev.sablespawner.util.AccessUtil.*;
+
 @Getter
 public abstract class SubLevelEntry {
     protected final UUID uuid;
@@ -56,7 +58,4 @@ public abstract class SubLevelEntry {
         return true;
     }
 
-    protected long getGameTime() {
-        return SableSpawner.SERVER.overworld().getGameTime();
-    }
 }

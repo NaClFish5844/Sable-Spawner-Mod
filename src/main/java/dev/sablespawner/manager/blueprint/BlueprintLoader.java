@@ -21,6 +21,7 @@ import java.util.Objects;
 import java.util.Set;
 
 import static dev.sablespawner.SableSpawnerConfig.BLUEPRINT_CACHE_MAX_BLOCKS;
+import static dev.sablespawner.util.AccessUtil.*;
 
 public final class BlueprintLoader {
 
@@ -174,23 +175,17 @@ public final class BlueprintLoader {
         return null;
     }
 
-    private static ModList getModList() {
-        return ModList.get();
-    }
-    private static Logger getLogger() {
-        return SableSpawner.LOGGER;
-    }
     private static ObjectSet<DatapackSource> getDatapackRegistry() {
-        return SableSpawner.DATAPACK_MANAGER.getDATAPACK_REGISTRY();
+        return getDatapackManager().getDATAPACK_REGISTRY();
     }
     private static Object2ObjectOpenHashMap<PropertyKey, AbstractSchematicProperty> getPropertyManager() {
-        return SableSpawner.DATAPACK_MANAGER.getPROPERTY_MANAGER();
+        return getDatapackManager().getPROPERTY_MANAGER();
     }
     private static Object2ObjectOpenHashMap<BlueprintKey, BlueprintEntry> getBlueprintRegistry() {
-        return SableSpawner.BLUEPRINT_MANAGER.getBLUEPRINT_REGISTRY();
+        return getBlueprintManager().getBLUEPRINT_REGISTRY();
     }
     private static Object2ObjectOpenHashMap<PropertyKey, BlueprintKey> getPropertyBlueprintMap() {
-        return SableSpawner.BLUEPRINT_MANAGER.getPROPERTY_BLUEPRINT_MAP();
+        return getBlueprintManager().getPROPERTY_BLUEPRINT_MAP();
     }
 
 

@@ -9,6 +9,7 @@ import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.neoforge.event.tick.ServerTickEvent;
 
 import static dev.sablespawner.SableSpawnerConfig.SCAN_INTERVAL;
+import static dev.sablespawner.util.AccessUtil.*;
 
 public class GlobalControl {
     public static final GlobalControl INSTANCE = new GlobalControl();
@@ -54,11 +55,5 @@ public class GlobalControl {
             controller.callPerTick();
         }
     }
-
-
-    private long getGameTime() { return SableSpawner.SERVER.overworld().getGameTime(); }
-    private PlayerManager getPlayerManager() { return SableSpawner.PLAYER_MANAGER; }
-
-
 
 }

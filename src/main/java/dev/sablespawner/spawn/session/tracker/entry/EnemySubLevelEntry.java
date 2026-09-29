@@ -6,6 +6,8 @@ import lombok.Getter;
 
 import java.util.UUID;
 
+import static dev.sablespawner.util.AccessUtil.*;
+
 @Getter
 public class EnemySubLevelEntry extends SubLevelEntry {
     private final EnemyProperty property;

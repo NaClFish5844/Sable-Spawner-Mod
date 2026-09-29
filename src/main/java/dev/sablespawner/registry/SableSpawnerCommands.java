@@ -52,6 +52,7 @@ import static com.mojang.brigadier.Command.SINGLE_SUCCESS;
 import static dev.sablespawner.SableSpawnerConfig.*;
 import static net.minecraft.commands.Commands.argument;
 import static net.minecraft.commands.Commands.literal;
+import static dev.sablespawner.util.AccessUtil.*;
 
 @EventBusSubscriber(modid = SableSpawner.MODID)
 public final class SableSpawnerCommands {
@@ -465,7 +466,7 @@ public final class SableSpawnerCommands {
         getLogger().info("刷怪队列：{} 个玩家 | Spawn queue: {} players", queue.size(), queue.size());
         for (Map.Entry<UUID, SpawnTicket> e : queue.entrySet()) {
             SpawnTicket ticket = e.getValue();
-            ServerPlayer target = SableSpawner.SERVER.getPlayerList().getPlayer(e.getKey());
+            ServerPlayer target = getServer().getPlayerList().getPlayer(e.getKey());
             PlayerStatus status = target == null ? null : getPlayerManager().getStatus(target);
             long remaining = status == null ? -1 : ticket.getScheduledSpawnTime(status) - getGameTime();
 
@@ -604,7 +605,7 @@ public final class SableSpawnerCommands {
         return String.format("%.2f", value);
     }
     private static String playerName(UUID uuid) {
-        ServerPlayer player = SableSpawner.SERVER.getPlayerList().getPlayer(uuid);
+        ServerPlayer player = getServer().getPlayerList().getPlayer(uuid);
         return player != null ? player.getScoreboardName() : shortUuid(uuid);
     }
     @Nullable private static EnemyControl findController(CommandContext<CommandSourceStack> ctx, String dim) {
@@ -614,9 +615,6 @@ public final class SableSpawnerCommands {
             fail(ctx, "sablespawner.command.debug.no_controller", dim);
         }
         return controller;
-    }
-    private static long getGameTime() {
-        return SableSpawner.SERVER.overworld().getGameTime();
     }
     private static String currentDimension(CommandContext<CommandSourceStack> ctx) {
         return ctx.getSource().getLevel().dimension().location().toString();
@@ -649,22 +647,6 @@ public final class SableSpawnerCommands {
             names.add( key.propertyName() );
         }
         return SharedSuggestionProvider.suggest(names, builder);
-    }
-
-    private static DatapackManager getDatapackManager() {
-        return SableSpawner.DATAPACK_MANAGER;
-    }
-    private static BlueprintManager getBlueprintManager() {
-        return SableSpawner.BLUEPRINT_MANAGER;
-    }
-    private static PlayerManager getPlayerManager() {
-        return SableSpawner.PLAYER_MANAGER;
-    }
-    private static GlobalControl getGlobalControl() {
-        return SableSpawner.GLOBAL_CONTROLLER;
-    }
-    private static Logger getLogger() {
-        return SableSpawner.LOGGER;
     }
 
     @FunctionalInterface

@@ -15,6 +15,8 @@ import java.nio.file.attribute.BasicFileAttributes;
 import java.util.*;
 import java.util.zip.ZipFile;
 
+import static dev.sablespawner.util.AccessUtil.*;
+
 public final class DatapackScanner {
     // 此处的所有scan开头的public方法只返回路径
     // 此处所有方法只应该在DatapackLoader中使用
@@ -160,13 +162,4 @@ public final class DatapackScanner {
         return path.endsWith("/") ? path.substring(0, path.length() - 1) : path;
     }
 
-    private static Logger getLogger() {
-        return SableSpawner.LOGGER;
-    }
-    private static Path getGameDir() {
-        return FMLPaths.GAMEDIR.get();
-    }
-    private static Path getSableSpawnerDir() {
-        return getGameDir().resolve("sablespawner");
-    }
 }
