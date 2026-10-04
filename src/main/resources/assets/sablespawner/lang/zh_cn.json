@@ -18,13 +18,17 @@
   "block.sablespawner.fleet_base_core": "舰队基地核心",
   "container.sablespawner.fleet_base_core": "舰队基地核心",
 
+  "sablespawner.gui.fleet_base_core.info.core_short_id": "核心ID（短）： %s",
+  "sablespawner.gui.fleet_base_core.info.core_id": "核心ID： %s",
+  "sablespawner.gui.fleet_base_core.info.owner": "所有者： %s",
+  "sablespawner.gui.fleet_base_core.info.owner.none": "无所有者",
+  "sablespawner.gui.fleet_base_core.info.bound": "绑定到SubLevel： %s",
   "sablespawner.gui.fleet_base_core.radius": "半径：",
   "sablespawner.gui.fleet_base_core.radius_hint": "输入半径",
   "sablespawner.gui.fleet_base_core.protect_switch": "保护",
   "sablespawner.gui.fleet_base_core.force_load_switch": "强制加载",
 
-  "sablespawner.gui.missing": "核心数据不存在",
-  "sablespawner.gui.apply": "应用",
+  "sablespawner.gui.missing": "数据不存在，你不应该看到这个",
 
   "sablespawner.command.reload.all": "重载全部数据完成，加载 %s 个数据包与 %s 个蓝图，用时 %s ms",
   "sablespawner.command.reload.datapack": "重载全部数据完成，加载 %s 个数据包，用时 %s ms",

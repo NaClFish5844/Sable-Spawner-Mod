@@ -14,19 +14,15 @@ import dev.sablespawner.SableSpawner;
 import dev.sablespawner.config.FleetBaseCoreConfig;
 import dev.sablespawner.player.PlayerStatus;
 import dev.sablespawner.registry.SableSpawnerBlockEntities;
-import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
-import it.unimi.dsi.fastutil.objects.ObjectSet;
 import lombok.Getter;
 import net.minecraft.Util;
 import net.minecraft.core.BlockPos;
 import net.minecraft.core.UUIDUtil;
-import net.minecraft.resources.ResourceKey;
 import net.minecraft.resources.ResourceLocation;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.entity.LivingEntity;
 import net.minecraft.world.level.ChunkPos;
-import net.minecraft.world.level.Level;
 import net.minecraft.world.level.block.entity.BlockEntity;
 import net.minecraft.world.level.block.state.BlockState;
 import net.minecraft.world.phys.Vec3;
@@ -40,8 +36,6 @@ import static dev.sablespawner.util.AccessUtil.*;
 
 public class FleetBaseCoreBlockEntity extends BlockEntity implements ISyncPersistRPCBlockEntity {
 
-    private static final Object2ObjectOpenHashMap<ResourceKey<Level>, ObjectSet<BlockPos>> LOADED_CORES = new Object2ObjectOpenHashMap<>();
-
     @Getter private final FieldManagedStorage syncStorage = new FieldManagedStorage(this);
 
     @Getter @Persisted @DescSynced private UUID coreId = UUID.randomUUID();
@@ -50,6 +44,7 @@ public class FleetBaseCoreBlockEntity extends BlockEntity implements ISyncPersis
     @Getter @Persisted @DescSynced private int radius = FleetBaseCoreConfig.DEFAULT_RADIUS.getDefault();
     @Getter @Persisted @DescSynced private boolean enabled = true;
     @Getter @Persisted @DescSynced private boolean forceLoaded = false;
+    @Getter @DescSynced private boolean boundToSubLevel = false;
 
     @Nullable private String forceLoadSubLevelId;
 
@@ -65,13 +60,17 @@ public class FleetBaseCoreBlockEntity extends BlockEntity implements ISyncPersis
 
         maintainForceLoad();
         if ( this.enabled ) { applyProtect(); }
+
+        this.boundToSubLevel = ( getBoundSubLevel( (ServerLevel) this.level ) != null );
     }
     @Override public void onLoad() {
         super.onLoad();
         if ( this.level instanceof ServerLevel ) {
-            this.radius = clampRadius(this.radius);   // 配置可能被改过，重新钳制一次
+            this.radius = clampRadius(this.radius);
             getFleetBaseCoreTracker().deferredAppenderAdd(this);
             if ( this.forceLoaded ) { applyForceLoad(); }
+
+            this.boundToSubLevel = ( getBoundSubLevel( (ServerLevel) this.level ) != null );
         }
     }
     @Override public void setRemoved() {
@@ -170,6 +169,7 @@ public class FleetBaseCoreBlockEntity extends BlockEntity implements ISyncPersis
     }
     public Vec3 getWorldPos() {
         if ( !(this.level instanceof ServerLevel serverLevel) ) { return Vec3.atCenterOf(this.worldPosition); }
+        if ( !this.boundToSubLevel ) { return Vec3.atCenterOf(this.worldPosition); }
 
         ServerSubLevel sub = getBoundSubLevel(serverLevel);
         if ( sub == null ) { return Vec3.atCenterOf(this.worldPosition); }
@@ -177,19 +177,9 @@ public class FleetBaseCoreBlockEntity extends BlockEntity implements ISyncPersis
         return sub.logicalPose().transformPosition(Vec3.atCenterOf(this.worldPosition));
     }
 
-
-    public static boolean isInSafeZone(ServerLevel level, Vec3 pos) {
-        ObjectSet<BlockPos> cores = LOADED_CORES.get(level.dimension());
-        if ( cores == null || cores.isEmpty() ) { return false; }
-
-        for ( BlockPos corePos : cores ) {
-            if ( !(level.getBlockEntity(corePos) instanceof FleetBaseCoreBlockEntity core) ) { continue; }
-            if ( !core.enabled ) { continue; }
-
-            double radiusSqr = (double) core.radius * core.radius;
-            if ( pos.distanceToSqr(core.getWorldPos()) <= radiusSqr ) { return true; }
-        }
-        return false;
+    public boolean covers(Vec3 pos) {
+        double radiusSqr = (double) this.radius * this.radius;
+        return pos.distanceToSqr(getWorldPos()) <= radiusSqr;
     }
 
     public void setRadius(int radius) {

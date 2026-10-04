@@ -18,11 +18,17 @@
   "block.sablespawner.fleet_base_core": "Fleet Base Core",
   "container.sablespawner.fleet_base_core": "Fleet Base Core",
 
-  "sablespawner.gui.fleet_base_core.radius": "Radius: %s",
-  "sablespawner.gui.fleet_base_core.enabled": "Enabled",
-  "sablespawner.gui.fleet_base_core.disabled": "Disabled",
-  "sablespawner.gui.fleet_base_core.apply": "Apply",
-  "sablespawner.gui.fleet_base_core.hint": "Enter radius",
+  "sablespawner.gui.fleet_base_core.info.core_short_id": "Core ID (short): %s",
+  "sablespawner.gui.fleet_base_core.info.core_id": "Core ID: %s",
+  "sablespawner.gui.fleet_base_core.info.owner": "Owner: %s",
+  "sablespawner.gui.fleet_base_core.info.owner.none": "No Owner",
+  "sablespawner.gui.fleet_base_core.info.bound": "Bound to SubLevel: %s",
+  "sablespawner.gui.fleet_base_core.radius": "Radius: ",
+  "sablespawner.gui.fleet_base_core.radius_hint": "Enter radius",
+  "sablespawner.gui.fleet_base_core.protect_switch": "Protection",
+  "sablespawner.gui.fleet_base_core.force_load_switch": "Force Load",
+
+  "sablespawner.gui.missing": "Data not found, you are not supposed to see this",
 
   "sablespawner.command.reload.all": "Reload complete: %s datapacks, %s blueprints, took %s ms",
   "sablespawner.command.reload.datapack": "Reload complete: %s datapacks, took %s ms",

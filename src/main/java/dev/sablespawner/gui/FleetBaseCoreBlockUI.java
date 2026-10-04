@@ -10,6 +10,8 @@ import com.lowdragmc.lowdraglib2.gui.ui.elements.Button;
 import com.lowdragmc.lowdraglib2.gui.ui.elements.Label;
 import com.lowdragmc.lowdraglib2.gui.ui.elements.Switch;
 import com.lowdragmc.lowdraglib2.gui.ui.elements.TextField;
+import com.lowdragmc.lowdraglib2.gui.ui.event.HoverTooltips;
+import com.lowdragmc.lowdraglib2.gui.ui.event.UIEvent;
 import com.lowdragmc.lowdraglib2.gui.ui.event.UIEvents;
 import com.lowdragmc.lowdraglib2.gui.ui.style.StylesheetManager;
 import com.lowdragmc.lowdraglib2.utils.TagBuilder;
@@ -17,8 +19,12 @@ import dev.vfyjxf.taffy.style.AlignItems;
 import dev.vfyjxf.taffy.style.FlexDirection;
 import dev.sablespawner.blockentity.FleetBaseCoreBlockEntity;
 import dev.sablespawner.config.FleetBaseCoreConfig;
+import it.unimi.dsi.fastutil.objects.ObjectArrayList;
+import it.unimi.dsi.fastutil.objects.ObjectList;
 import net.minecraft.network.chat.Component;
 import net.minecraft.resources.ResourceLocation;
+
+import java.util.List;
 
 public final class FleetBaseCoreBlockUI {
 
@@ -35,7 +41,7 @@ public final class FleetBaseCoreBlockUI {
         root.addClass("panel_bg");
         root.layout(l -> l.flexDirection(FlexDirection.COLUMN).paddingAll(8).gapAll(6).width(170) );
         root.addChildren(
-                new Label().setText(Component.translatable("container.sablespawner.fleet_base_core")),
+                buildTitle(core),
                 buildRadiusController(core),
                 buildEnableSwitch(core),
                 buildForceLoadSwitch(core)
@@ -43,6 +49,25 @@ public final class FleetBaseCoreBlockUI {
 
         return ModularUI.of(UI.of(root,
                 StylesheetManager.INSTANCE.getStylesheetSafe(STYLE)), holder.player);
+    }
+    public static UIElement buildTitle(FleetBaseCoreBlockEntity core) {
+        UIElement root = new UIElement();
+        root.layout(l -> l.flexDirection(FlexDirection.ROW).gapAll(6) );
+
+        Label label = new Label();
+        label.setText(Component.translatable("container.sablespawner.fleet_base_core"));
+        label.layout(l -> l.flex(1));
+
+        Button infoButton = new Button();
+        infoButton.setText(Component.literal("i"));
+        infoButton.layout(l -> l.width(10).height(10));
+        infoButton.addEventListener(UIEvents.HOVER_TOOLTIPS, event ->
+                event.hoverTooltips = new HoverTooltips(infoLines(core), null, null, null));
+
+        return root.addChildren(
+                label,
+                infoButton
+        );
     }
     public static UIElement buildRadiusController(FleetBaseCoreBlockEntity core) {
         UIElement root = new UIElement();
@@ -146,5 +171,20 @@ public final class FleetBaseCoreBlockUI {
         if ( UIElement.isShiftDown() ) { return FleetBaseCoreConfig.RADIUS_STEP_COARSE.getAsInt(); }
         return FleetBaseCoreConfig.RADIUS_STEP.getAsInt();
     }
+    private static List<Component> infoLines(FleetBaseCoreBlockEntity core) {
+        ObjectList<Component> lines = new ObjectArrayList<>();
 
+        lines.add(Component.translatable("sablespawner.gui.fleet_base_core.info.core_short_id",
+                core.getCoreId().toString().substring(0, 8)));
+        lines.add(Component.translatable("sablespawner.gui.fleet_base_core.info.core_id",
+                core.getCoreId().toString()));
+        lines.add(Component.translatable("sablespawner.gui.fleet_base_core.info.owner",
+                core.getOwnerName().isEmpty()
+                        ? Component.translatable("sablespawner.gui.fleet_base_core.info.owner.none")
+                        : Component.literal(core.getOwnerName())));
+        lines.add(Component.translatable("sablespawner.gui.fleet_base_core.info.bound",
+                Component.translatable(core.isBoundToSubLevel() ? "gui.yes" : "gui.no")));
+
+        return lines;
+    }
 }

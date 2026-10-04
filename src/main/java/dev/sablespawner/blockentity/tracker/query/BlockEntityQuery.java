@@ -8,7 +8,7 @@ import java.util.UUID;
 import java.util.function.Predicate;
 
 public abstract class BlockEntityQuery<T> {
-    private final Object2ObjectOpenHashMap<UUID, T> source;
+    protected final Object2ObjectOpenHashMap<UUID, T> source;
     protected Predicate<T> predicate = entry -> true;
 
     public BlockEntityQuery(Object2ObjectOpenHashMap<UUID, T> source) { this.source = source; }
