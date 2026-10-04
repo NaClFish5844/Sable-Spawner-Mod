@@ -2,10 +2,19 @@ package dev.sablespawner;
 
 import dev.ryanhcode.sable.platform.SableEventPlatform;
 import dev.ryanhcode.sable.sublevel.plot.heat.SubLevelHeatMapManager;
+import dev.sablespawner.blockentity.FleetBaseCoreBlockEntity;
+import dev.sablespawner.blockentity.tracker.FleetBaseCoreBlockEntityTracker;
+import dev.sablespawner.config.FleetBaseCoreConfig;
+import dev.sablespawner.config.GeneralServerConfig;
 import dev.sablespawner.manager.DataManager;
 import dev.sablespawner.manager.blueprint.BlueprintManager;
 import dev.sablespawner.player.PlayerDataAttachment;
 import dev.sablespawner.player.PlayerManager;
+import dev.sablespawner.registry.SableSpawnerBlockEntities;
+import dev.sablespawner.registry.SableSpawnerBlocks;
+import dev.sablespawner.registry.SableSpawnerCreativeTabs;
+import dev.sablespawner.registry.SableSpawnerItems;
+import dev.sablespawner.registry.SableSpawnerMenus;
 import dev.sablespawner.spawn.EnemyControl;
 import dev.sablespawner.spawn.GlobalControl;
 import net.minecraft.server.MinecraftServer;
@@ -35,9 +44,19 @@ public class SableSpawner {
     public static final PlayerManager PLAYER_MANAGER = PlayerManager.INSTANCE;
     public static final GlobalControl GLOBAL_CONTROLLER = GlobalControl.INSTANCE;
 
+    public static final FleetBaseCoreBlockEntityTracker FLEET_BASE_CORE_TRACKER = FleetBaseCoreBlockEntityTracker.INSTANCE;
 
     public SableSpawner(IEventBus modEventBus, ModContainer modContainer) {
         PlayerDataAttachment.ATTACHMENT_TYPES.register(modEventBus);
+
+        SableSpawnerItems.ITEMS.register(modEventBus);
+        SableSpawnerBlocks.BLOCKS.register(modEventBus);
+        SableSpawnerBlockEntities.BLOCK_ENTITIES.register(modEventBus);
+        SableSpawnerMenus.MENUS.register(modEventBus);
+        SableSpawnerCreativeTabs.CREATIVE_TABS.register(modEventBus);
+
+        FleetBaseCoreBlockEntity.initTicketTypes();   // 把子空间加载票据类型注册进 Sable，必须先于存档读取
+
         modEventBus.addListener(this::commonSetup);
 
         NeoForge.EVENT_BUS.register(this);
@@ -45,10 +64,8 @@ public class SableSpawner {
         NeoForge.EVENT_BUS.register(GLOBAL_CONTROLLER);
 
         initSableListener();
-
-        modContainer.registerConfig(ModConfig.Type.SERVER, SableSpawnerConfig.SPEC);
+        registerConfig(modContainer);
     }
-
     private void initSableListener() {
         SableEventPlatform.INSTANCE.onSubLevelContainerReady(
                 (level, container) -> {
@@ -67,14 +84,18 @@ public class SableSpawner {
                     controller.onSplitDetected(blocks);
                 });
     }
+    private void registerConfig(ModContainer modContainer) {
+        modContainer.registerConfig(ModConfig.Type.SERVER, GeneralServerConfig.SPEC,
+                "sablespawner/general-server.toml");
+        modContainer.registerConfig(ModConfig.Type.SERVER, FleetBaseCoreConfig.SPEC,
+                "sablespawner/fleet-base-core-server.toml");
+    }
 
     private void commonSetup(FMLCommonSetupEvent event) {
         DataManager.initSideLoadedFiles();
     }
 
-
-    @SubscribeEvent
-    public void onServerStarting(ServerStartingEvent event) {
+    @SubscribeEvent public void onServerStarting(ServerStartingEvent event) {
         SERVER = event.getServer();
 
         DataManager.reloadAll();

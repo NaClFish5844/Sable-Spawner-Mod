@@ -7,11 +7,8 @@ import dev.ryanhcode.sable.companion.math.BoundingBox3d;
 import dev.ryanhcode.sable.sublevel.ServerSubLevel;
 import dev.ryanhcode.sable.sublevel.SubLevel;
 import dev.ryanhcode.sable.sublevel.storage.SubLevelRemovalReason;
-import dev.sablespawner.SableSpawner;
-import dev.sablespawner.SableSpawnerConfig;
-import dev.sablespawner.manager.datapack.DatapackManager;
+import dev.sablespawner.config.GeneralServerConfig;
 import dev.sablespawner.manager.datapack.property.config.WorldConfig;
-import dev.sablespawner.player.PlayerManager;
 import dev.sablespawner.player.PlayerStatus;
 import dev.sablespawner.spawn.session.tracker.AllySubLevelTracker;
 import dev.sablespawner.spawn.session.tracker.DebrisSubLevelTracker;
@@ -27,12 +24,10 @@ import it.unimi.dsi.fastutil.Pair;
 import it.unimi.dsi.fastutil.objects.*;
 import lombok.Getter;
 import net.minecraft.core.BlockPos;
-import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
 import net.minecraft.server.level.ServerPlayer;
 import net.minecraft.world.phys.AABB;
 import net.minecraft.world.phys.Vec3;
-import org.slf4j.Logger;
 
 import javax.annotation.Nullable;
 import java.util.*;
@@ -271,7 +266,7 @@ public class EnemyControl implements SubLevelObserver {
         Vec3 playerWorldPos = Player.position();
 
         String enemyPrefix = getWorldConfig().getEnemyPrefix();
-        int enemyDetectionRadius = SableSpawnerConfig.ENEMY_DETECTION_DISTANCE.getAsInt();
+        int enemyDetectionRadius = GeneralServerConfig.ENEMY_DETECTION_DISTANCE.getAsInt();
         AABB detectionBox = AABB.ofSize(
                 playerWorldPos,
                 enemyDetectionRadius * 2,

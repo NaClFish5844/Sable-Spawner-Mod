@@ -11,6 +11,19 @@
   "sablespawner.configuration.player_spawn_protection_time": "Player Spawn Protection Time",
   "sablespawner.configuration.blueprint_cache_max_blocks": "Blueprint Cache Max Blocks",
 
+  "itemGroup.sablespawner": "Sable Spawner",
+  "item.sablespawner.example_item": "Example Item",
+  "block.sablespawner.example_block": "Example Block",
+
+  "block.sablespawner.fleet_base_core": "Fleet Base Core",
+  "container.sablespawner.fleet_base_core": "Fleet Base Core",
+
+  "sablespawner.gui.fleet_base_core.radius": "Radius: %s",
+  "sablespawner.gui.fleet_base_core.enabled": "Enabled",
+  "sablespawner.gui.fleet_base_core.disabled": "Disabled",
+  "sablespawner.gui.fleet_base_core.apply": "Apply",
+  "sablespawner.gui.fleet_base_core.hint": "Enter radius",
+
   "sablespawner.command.reload.all": "Reload complete: %s datapacks, %s blueprints, took %s ms",
   "sablespawner.command.reload.datapack": "Reload complete: %s datapacks, took %s ms",
   "sablespawner.command.reload.blueprint": "Reload complete: %s blueprints, took %s ms",

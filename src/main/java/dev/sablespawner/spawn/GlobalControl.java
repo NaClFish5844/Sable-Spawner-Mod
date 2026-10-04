@@ -1,14 +1,12 @@
 package dev.sablespawner.spawn;
 
 import dev.ryanhcode.sable.api.sublevel.SubLevelContainer;
-import dev.sablespawner.SableSpawner;
-import dev.sablespawner.player.PlayerManager;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import net.minecraft.server.level.ServerLevel;
 import net.neoforged.bus.api.SubscribeEvent;
 import net.neoforged.neoforge.event.tick.ServerTickEvent;
 
-import static dev.sablespawner.SableSpawnerConfig.SCAN_INTERVAL;
+import static dev.sablespawner.config.GeneralServerConfig.SCAN_INTERVAL;
 import static dev.sablespawner.util.AccessUtil.*;
 
 public class GlobalControl {

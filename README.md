@@ -27,7 +27,7 @@ Data-driven enemy ship spawning and lifecycle management for the [Sable](https:/
   <a href="README.la.md">LINGVA LATINA</a>
 </p>
 
-1) 文档索引表（每个语言一列）：
+2) 文档索引表（每个语言一列）：
 
 | 文档 / Document | 简体中文 | English | LINGVA LATINA |
 |---|---|---|---|

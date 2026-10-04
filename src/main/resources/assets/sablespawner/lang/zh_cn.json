@@ -11,6 +11,21 @@
   "sablespawner.configuration.player_spawn_protection_time": "玩家出生保护时间（tick）",
   "sablespawner.configuration.blueprint_cache_max_blocks": "蓝图缓存方块数上限",
 
+  "itemGroup.sablespawner": "Sable Spawner",
+  "item.sablespawner.example_item": "示例物品",
+  "block.sablespawner.example_block": "示例方块",
+
+  "block.sablespawner.fleet_base_core": "舰队基地核心",
+  "container.sablespawner.fleet_base_core": "舰队基地核心",
+
+  "sablespawner.gui.fleet_base_core.radius": "半径：",
+  "sablespawner.gui.fleet_base_core.radius_hint": "输入半径",
+  "sablespawner.gui.fleet_base_core.protect_switch": "保护",
+  "sablespawner.gui.fleet_base_core.force_load_switch": "强制加载",
+
+  "sablespawner.gui.missing": "核心数据不存在",
+  "sablespawner.gui.apply": "应用",
+
   "sablespawner.command.reload.all": "重载全部数据完成，加载 %s 个数据包与 %s 个蓝图，用时 %s ms",
   "sablespawner.command.reload.datapack": "重载全部数据完成，加载 %s 个数据包，用时 %s ms",
   "sablespawner.command.reload.blueprint": "重载全部数据完成，加载 %s 个蓝图，用时 %s ms",

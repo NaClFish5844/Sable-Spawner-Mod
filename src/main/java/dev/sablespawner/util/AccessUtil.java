@@ -1,6 +1,7 @@
 package dev.sablespawner.util;
 
 import dev.sablespawner.SableSpawner;
+import dev.sablespawner.blockentity.tracker.FleetBaseCoreBlockEntityTracker;
 import dev.sablespawner.manager.blueprint.BlueprintManager;
 import dev.sablespawner.manager.datapack.DatapackManager;
 import dev.sablespawner.player.PlayerManager;
@@ -17,23 +18,25 @@ import java.nio.file.Path;
 public final class AccessUtil {
     private AccessUtil() {}
 
-    // ── 单例管理器 ──
     public static DatapackManager getDatapackManager()   { return SableSpawner.DATAPACK_MANAGER; }
     public static BlueprintManager getBlueprintManager() { return SableSpawner.BLUEPRINT_MANAGER; }
     public static PlayerManager getPlayerManager()       { return SableSpawner.PLAYER_MANAGER; }
     public static GlobalControl getGlobalControl()       { return SableSpawner.GLOBAL_CONTROLLER; }
 
-    // ── 日志 / 模组列表 ──
+    public static FleetBaseCoreBlockEntityTracker getFleetBaseCoreTracker() { return SableSpawner.FLEET_BASE_CORE_TRACKER; }
+
+
     public static Logger getLogger() { return SableSpawner.LOGGER; }
     public static ModList getModList() { return ModList.get(); }
 
-    // ── 服务器与时间 ──
+
+    public static String getModId() { return SableSpawner.MODID; }
     @Nullable public static MinecraftServer getServer() { return SableSpawner.SERVER; }
     public static boolean isServerReady() { return SableSpawner.SERVER != null; }
     public static long getGameTime() { return requireServer().overworld().getGameTime(); }
     public static ServerLevel getOverworld() { return requireServer().overworld(); }
 
-    // ── 路径 ──
+
     public static Path getGameDir() { return FMLPaths.GAMEDIR.get(); }
     public static Path getSableSpawnerDir() { return getGameDir().resolve("sablespawner"); }
     public static Path getSableSchematicApiFolder() { return getGameDir().resolve("Sable-Schematics"); }

@@ -16,7 +16,6 @@ public abstract class SubLevelTracker<T extends SubLevelEntry> {
     private final ObjectList<T> deferredTransfer = new ObjectArrayList<>();
 
 
-
     public T get(UUID uuid) {
         return this.TRACKER.get(uuid);
     }

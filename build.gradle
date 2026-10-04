@@ -130,6 +130,10 @@ dependencies {
     // http://www.gradle.org/docs/current/userguide/dependency_management.html
     compileOnly "blank:sable-neoforge-${minecraft_version}:2.0.3"
     compileOnly "blank:sable-companion-common-${minecraft_version}:1.6.0"
+    compileOnly "blank:ldlib2-neoforge-${minecraft_version}:2.2.24-all"
+    compileOnly "blank:taffy:1.1.4"
+    compileOnly "blank:yoga:1.0.0"
+    compileOnly "blank:kotlin-stdlib:2.4.0"
     compileOnly "blank:sable-schematic-api:0.4.0"
     compileOnly 'org.projectlombok:lombok:1.18.34'
     annotationProcessor 'org.projectlombok:lombok:1.18.34'

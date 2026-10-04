@@ -1,9 +1,9 @@
-package dev.sablespawner;
+package dev.sablespawner.config;
 
 import net.neoforged.neoforge.common.ModConfigSpec;
 
 
-public class SableSpawnerConfig {
+public class GeneralServerConfig {
     private static final ModConfigSpec.Builder BUILDER = new ModConfigSpec.Builder();
 
     public static final ModConfigSpec.IntValue ENEMY_DETECTION_DISTANCE = BUILDER
@@ -36,5 +36,5 @@ public class SableSpawnerConfig {
 
 
 
-    static final ModConfigSpec SPEC = BUILDER.build();
+    public static final ModConfigSpec SPEC = BUILDER.build();
 }

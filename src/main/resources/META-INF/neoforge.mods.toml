@@ -7,7 +7,7 @@ license="GNU GPLv3"
 [[mods]]
 modId="sablespawner"
 
-version="1.0.2"
+version="1.0.3"
 
 displayName="Sable Spawner"
 
@@ -34,6 +34,13 @@ description='''
     modId="sable"
     type="required"
     versionRange="[2.0.3,)"
+    ordering="AFTER"
+    side="BOTH"
+
+[[dependencies.sablespawner]]
+    modId="ldlib2"
+    type="required"
+    versionRange="[2.2.24,)"
     ordering="AFTER"
     side="BOTH"
 

@@ -7,8 +7,8 @@ import lombok.Getter;
 import javax.annotation.Nullable;
 import java.util.UUID;
 
-import static dev.sablespawner.SableSpawnerConfig.DEBRIS_DESPAWN_TIME;
-import static dev.sablespawner.SableSpawnerConfig.LONG_DEBRIS_DESPAWN_TIME;
+import static dev.sablespawner.config.GeneralServerConfig.DEBRIS_DESPAWN_TIME;
+import static dev.sablespawner.config.GeneralServerConfig.LONG_DEBRIS_DESPAWN_TIME;
 
 @Getter
 public class DebrisSubLevelEntry extends SubLevelEntry {

@@ -1,0 +1,8 @@
+{
+  "parent": "minecraft:block/cube_bottom_top",
+  "textures": {
+    "top": "sablespawner:block/fleet_base_core_top",
+    "bottom": "sablespawner:block/fleet_base_core_top",
+    "side": "sablespawner:block/fleet_base_core_side"
+  }
+}

@@ -9,7 +9,7 @@ import net.neoforged.neoforge.event.entity.player.PlayerEvent;
 import javax.annotation.Nullable;
 import java.util.UUID;
 
-import static dev.sablespawner.SableSpawnerConfig.PLAYER_SPAWN_PROTECTION_TIME;
+import static dev.sablespawner.config.GeneralServerConfig.PLAYER_SPAWN_PROTECTION_TIME;
 
 @Getter
 public class PlayerManager {

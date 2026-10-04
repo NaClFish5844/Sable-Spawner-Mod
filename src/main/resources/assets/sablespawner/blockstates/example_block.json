@@ -1,0 +1,5 @@
+{
+  "variants": {
+    "": { "model": "sablespawner:block/example_block" }
+  }
+}

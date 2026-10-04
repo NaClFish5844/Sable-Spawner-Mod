@@ -1,11 +1,10 @@
 package dev.sablespawner.player;
 
-import dev.sablespawner.SableSpawner;
 import lombok.Getter;
 import lombok.Setter;
 import net.minecraft.server.level.ServerPlayer;
 
-import static dev.sablespawner.SableSpawnerConfig.PLAYER_PROTECTION_TIME;
+import static dev.sablespawner.config.GeneralServerConfig.PLAYER_PROTECTION_TIME;
 import static dev.sablespawner.util.AccessUtil.*;
 import static dev.sablespawner.player.PlayerDataAttachment.OUT_PROTECTION_TIME;
 import static dev.sablespawner.player.PlayerDataAttachment.SCORE;

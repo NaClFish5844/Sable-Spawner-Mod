@@ -1,7 +1,6 @@
 package dev.sablespawner.manager.blueprint;
 
 import dev.rew1nd.sableschematicapi.blueprint.SableBlueprint;
-import dev.sablespawner.SableSpawner;
 import dev.sablespawner.manager.datapack.DatapackManager;
 import dev.sablespawner.manager.datapack.DatapackSource;
 import dev.sablespawner.manager.datapack.property.sublevel.AbstractSchematicProperty;
@@ -11,8 +10,6 @@ import it.unimi.dsi.fastutil.Pair;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ObjectSet;
 import net.minecraft.nbt.CompoundTag;
-import net.neoforged.fml.ModList;
-import org.slf4j.Logger;
 
 import javax.annotation.Nullable;
 import java.nio.file.Path;
@@ -20,7 +17,7 @@ import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
 
-import static dev.sablespawner.SableSpawnerConfig.BLUEPRINT_CACHE_MAX_BLOCKS;
+import static dev.sablespawner.config.GeneralServerConfig.BLUEPRINT_CACHE_MAX_BLOCKS;
 import static dev.sablespawner.util.AccessUtil.*;
 
 public final class BlueprintLoader {
