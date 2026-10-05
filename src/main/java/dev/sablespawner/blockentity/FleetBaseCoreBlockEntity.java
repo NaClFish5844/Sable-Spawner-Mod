@@ -62,6 +62,8 @@ public class FleetBaseCoreBlockEntity extends BlockEntity implements ISyncPersis
         if ( this.enabled ) { applyProtect(); }
 
         this.boundToSubLevel = ( getBoundSubLevel( (ServerLevel) this.level ) != null );
+
+        getFleetBaseCoreTracker().executeTrackerUpdate();
     }
     @Override public void onLoad() {
         super.onLoad();

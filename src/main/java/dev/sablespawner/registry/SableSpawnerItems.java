@@ -13,9 +13,6 @@ public class SableSpawnerItems {
     public static final DeferredItem<Item> EXAMPLE_ITEM =
             ITEMS.registerSimpleItem("example_item");
 
-    public static final DeferredItem<BlockItem> EXAMPLE_BLOCK_ITEM =
-            ITEMS.registerSimpleBlockItem("example_block", SableSpawnerBlocks.EXAMPLE_BLOCK);
-
     public static final DeferredItem<BlockItem> FLEET_BASE_CORE_ITEM =
             ITEMS.registerSimpleBlockItem("fleet_base_core", SableSpawnerBlocks.FLEET_BASE_CORE);
 }

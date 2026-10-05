@@ -24,6 +24,11 @@ public abstract class BlockEntityTracker<T extends BlockEntity> {
     public boolean contains(T entry) {
         return this.TRACKER.containsValue(entry);
     }
+    public void clear() {
+        this.deferredAppender.clear();
+        this.deferredRemover.clear();
+        this.TRACKER.clear();
+    }
 
     public void deferredAppenderAdd(T entry) {
         this.deferredAppender.add(entry);

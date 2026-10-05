@@ -189,27 +189,6 @@ public class EnemyControl implements SubLevelObserver {
         ALLY_TRACKER.pop(uuid);
         DEBRIS_TRACKER.pop(uuid);
     }
-/*
-    public void onSplitDetected(Collection<BlockPos> blocks) {
-        BlockPos first = blocks.iterator().next();
-
-        SubLevel parentSubLevel = getParentSubLevelByPlot(first);
-        if ( parentSubLevel == null ) { return; }
-
-        Pair<Class<? extends SubLevelEntry>, SubLevelEntry> parent = getTrackedEntry(parentSubLevel.getUniqueId());
-
-        if ( parent == null ) { return; }
-        SubLevelEntry parentEntry = parent.right();
-
-
-        DebrisSubLevelTracker.PendingSplit pendingSplit =
-                new DebrisSubLevelTracker.PendingSplit( parentEntry, parentSubLevel, getGameTime(), blocks );
-        DEBRIS_TRACKER.pushPendingSplit(pendingSplit);
-    }
-
- */
-
-
     public void onSplitDetected(Collection<BlockPos> blocks) {
         if ( blocks.isEmpty() ) { return; }
         BlockPos first = blocks.iterator().next();
@@ -364,6 +343,7 @@ public class EnemyControl implements SubLevelObserver {
     public void onDebrisExpired(DebrisSubLevelEntry debris){
         DEBRIS_TRACKER.deferredRemoverAdd(debris);
     }
+
 
     private WorldConfig getWorldConfig() {
         WorldConfig config = getDatapackManager()

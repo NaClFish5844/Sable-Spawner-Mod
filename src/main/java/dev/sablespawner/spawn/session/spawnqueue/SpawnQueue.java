@@ -1,10 +1,7 @@
 package dev.sablespawner.spawn.session.spawnqueue;
 
-import dev.sablespawner.SableSpawner;
-import dev.sablespawner.manager.datapack.DatapackManager;
 import dev.sablespawner.manager.datapack.property.config.WorldConfig;
 import dev.sablespawner.manager.datapack.property.sublevel.PropertyKey;
-import dev.sablespawner.player.PlayerManager;
 import dev.sablespawner.player.PlayerStatus;
 import it.unimi.dsi.fastutil.objects.Object2ObjectOpenHashMap;
 import it.unimi.dsi.fastutil.objects.ObjectArrayList;
@@ -63,6 +60,9 @@ public class SpawnQueue {
     }
     @Nullable public SpawnTicket pop(ServerPlayer player) {
         return this.queue.remove( player.getUUID() );
+    }
+    public void clear() {
+        this.queue.clear();
     }
 
     @Nullable private PropertyKey selectEnemy(UUID playerUUID) {

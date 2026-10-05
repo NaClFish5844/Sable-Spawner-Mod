@@ -18,7 +18,6 @@ public class SableSpawnerCreativeTabs {
                     .icon(() -> new ItemStack(SableSpawnerItems.EXAMPLE_ITEM.get()))
                     .displayItems((parameters, output) -> {
                         output.accept(SableSpawnerItems.EXAMPLE_ITEM.get());
-                        output.accept(SableSpawnerItems.EXAMPLE_BLOCK_ITEM.get());
                         output.accept(SableSpawnerItems.FLEET_BASE_CORE_ITEM.get());
                     })
                     .build());

@@ -14,11 +14,11 @@ import dev.sablespawner.registry.SableSpawnerBlockEntities;
 import dev.sablespawner.registry.SableSpawnerBlocks;
 import dev.sablespawner.registry.SableSpawnerCreativeTabs;
 import dev.sablespawner.registry.SableSpawnerItems;
-import dev.sablespawner.registry.SableSpawnerMenus;
 import dev.sablespawner.spawn.EnemyControl;
 import dev.sablespawner.spawn.GlobalControl;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.level.ServerLevel;
+import net.neoforged.neoforge.event.server.ServerStoppedEvent;
 import org.slf4j.Logger;
 
 import com.mojang.logging.LogUtils;
@@ -52,10 +52,9 @@ public class SableSpawner {
         SableSpawnerItems.ITEMS.register(modEventBus);
         SableSpawnerBlocks.BLOCKS.register(modEventBus);
         SableSpawnerBlockEntities.BLOCK_ENTITIES.register(modEventBus);
-        SableSpawnerMenus.MENUS.register(modEventBus);
         SableSpawnerCreativeTabs.CREATIVE_TABS.register(modEventBus);
 
-        FleetBaseCoreBlockEntity.initTicketTypes();   // 把子空间加载票据类型注册进 Sable，必须先于存档读取
+        FleetBaseCoreBlockEntity.initTicketTypes();
 
         modEventBus.addListener(this::commonSetup);
 
@@ -102,6 +101,9 @@ public class SableSpawner {
         GLOBAL_CONTROLLER.clearEnemyOnRestart();
 
         LOGGER.info("SableSpawner 服务器启动中 | SableSpawner server starting");
+    }
+    @SubscribeEvent public void onServerStopped(ServerStoppedEvent event) {
+        GLOBAL_CONTROLLER.clearAllTrackers();
     }
 
 

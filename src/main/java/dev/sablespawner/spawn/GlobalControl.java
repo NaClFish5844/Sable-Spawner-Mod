@@ -33,8 +33,7 @@ public class GlobalControl {
         }
     }
 
-    @SubscribeEvent
-    public void onServerTick(ServerTickEvent.Post event){
+    @SubscribeEvent public void onServerTick(ServerTickEvent.Post event){
         if ( getGameTime() % SCAN_INTERVAL.getAsInt() == 0) {
             for ( EnemyControl controller :CONTROLLERS.values() ){
                 if ( !controller.isLevelActive() ) { continue; }
@@ -54,4 +53,13 @@ public class GlobalControl {
         }
     }
 
+    public void clearAllTrackers() {
+        for (EnemyControl controller : CONTROLLERS.values()) {
+            controller.ENEMY_TRACKER.clear();
+            controller.ALLY_TRACKER.clear();
+            controller.DEBRIS_TRACKER.clear();
+
+            controller.SPAWN_QUEUE.clear();
+        }
+    }
 }
